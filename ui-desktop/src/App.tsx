@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ScientificChart } from "./components/OfficeCanvas/ScientificChart";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import MatrixDashboard from "./components/MatrixDashboard";
@@ -26,6 +27,9 @@ export default function App() {
   const [spreadsheetData, setSpreadsheetData] = useState<SpreadsheetGridData>(initialGrid);
   const [revision, setRevision] = useState(0);
   const [peakRow, setPeakRow] = useState<number | null>(null);
+  // chartData: {x, y}[]
+  const [chartData, setChartData] = useState<{ x: number; y: number }[]>([]);
+  const [peakIndex, setPeakIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     let activeUnlisten: null | (() => void) = null;
@@ -88,6 +92,19 @@ export default function App() {
     }
   };
 
+  // 監控 spreadsheetData，轉換 B, C 欄為 chartData
+  useEffect(() => {
+    const arr: { x: number; y: number }[] = [];
+    for (let row = 2; row <= spreadsheetData.rows; row++) {
+      const v = spreadsheetData.cells[`${row}:2`];
+      const c = spreadsheetData.cells[`${row}:3`];
+      if (typeof v === "number" && typeof c === "number") {
+        arr.push({ x: v, y: c });
+      }
+    }
+    setChartData(arr);
+  }, [spreadsheetData]);
+
   return (
     <main className="app-shell">
       <h1>LabFlow Desktop Shell</h1>
@@ -104,14 +121,17 @@ export default function App() {
             // 取 B, C 欄（col=2,3）所有數值（假設 row 2 開始為數據）
             const voltages: number[] = [];
             const currents: number[] = [];
+            const chartArr: { x: number; y: number }[] = [];
             for (let row = 2; row <= spreadsheetData.rows; row++) {
               const v = spreadsheetData.cells[`${row}:2`];
               const c = spreadsheetData.cells[`${row}:3`];
               if (typeof v === "number" && typeof c === "number") {
                 voltages.push(v);
                 currents.push(c);
+                chartArr.push({ x: v, y: c });
               }
             }
+            setChartData(chartArr);
             if (voltages.length === 0 || currents.length === 0) {
               setError("B、C 欄沒有可用數據");
               return;
@@ -119,6 +139,7 @@ export default function App() {
             try {
               const result = await invoke<PeakResult>("analyze_cv_data", { voltages, currents });
               setPeakRow(result.index !== undefined ? result.index + 2 : null); // row index 對應資料列
+              setPeakIndex(result.index !== undefined ? result.index : undefined);
               setRevision((r) => r + 1);
             } catch (err) {
               setError(err instanceof Error ? err.message : String(err));
@@ -129,6 +150,15 @@ export default function App() {
           分析峰值 (Find Peak)
         </button>
         <SpreadsheetGrid data={spreadsheetData} revision={revision} peakRow={peakRow} />
+        {/* Chart 放在 SpreadsheetGrid 下方 */}
+        <div style={{ marginTop: 24 }}>
+          <ScientificChart
+            data={chartData}
+            peakIndex={peakIndex}
+            width={600}
+            height={260}
+          />
+        </div>
       </section>
       <button onClick={fetchState} disabled={loading}>
         {loading ? "讀取中..." : "Fetch Graph State"}
