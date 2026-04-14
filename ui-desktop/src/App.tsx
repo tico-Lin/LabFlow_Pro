@@ -158,6 +158,30 @@ export default function App() {
             width={600}
             height={260}
           />
+          {/* Approve & Commit to Graph 按鈕 */}
+          {chartData.length > 0 && typeof peakIndex === 'number' && (
+            <button
+              className="primary-button"
+              style={{ marginTop: 16 }}
+              onClick={async () => {
+                if (typeof peakIndex !== 'number' || !chartData[peakIndex]) return;
+                const { x: voltage, y: current } = chartData[peakIndex];
+                setError(null);
+                try {
+                  await invoke('commit_agent_analysis', {
+                    peakIndex: peakIndex,
+                    voltage,
+                    current,
+                  });
+                  await fetchState();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : String(err));
+                }
+              }}
+            >
+              確認並寫入星圖 (Approve & Commit to Graph)
+            </button>
+          )}
         </div>
       </section>
       <button onClick={fetchState} disabled={loading}>

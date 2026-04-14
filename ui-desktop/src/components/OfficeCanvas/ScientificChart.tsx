@@ -7,7 +7,7 @@ export interface ScientificChartProps {
   height: number;
 }
 
-const AXIS_COLOR = '#888';
+// const AXIS_COLOR = '#888'; // 已移除未使用變數
 const GRID_COLOR = '#eee';
 const LINE_COLOR = '#1976d2';
 const PEAK_CIRCLE_COLOR = '#d32f2f';

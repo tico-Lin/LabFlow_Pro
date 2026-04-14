@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export enum RenderTier {
   L1_Skeleton = "L1_Skeleton",
@@ -116,13 +116,14 @@ function L3WebGLStarMap() {
 function GridCard({ card, tier }: GridCardProps) {
   const tabletSpan = card.w >= 8 ? 6 : card.w >= 4 ? 3 : 2;
 
-  const style: CSSProperties = {
-    "--x": card.x,
-    "--y": card.y,
-    "--w": card.w,
-    "--h": card.h,
-    "--tablet-span": tabletSpan
-  };
+  // 修正 TS2353: 允許自訂 CSS 變數
+  const style = {
+    ["--x"]: card.x,
+    ["--y"]: card.y,
+    ["--w"]: card.w,
+    ["--h"]: card.h,
+    ["--tablet-span"]: tabletSpan,
+  } as React.CSSProperties;
 
   return (
     <article className="matrix-card" style={style}>
