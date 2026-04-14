@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package labflow.v1;
+
+option go_package = "github.com/labflow/host-service/gen/labflow/v1;labflowv1";
+
+// ─── Session / Collaboration ──────────────────────────────────────────────────
+
+message Session {
+  string session_id = 1;
+  string owner_key  = 2;   // SHA-256 hex of the API key
+  repeated string peer_ids = 3;
+  int64  created_at = 4;   // Unix timestamp (seconds)
+}
+
+message JoinRequest {
+  string session_id = 1;
+  string api_key    = 2;   // raw key — validated server-side
+}
+
+message JoinResponse {
+  bool   accepted   = 1;
+  string token      = 2;   // short-lived JWT for this session
+  string message    = 3;
+}
+
+// ─── Agent Tasks ─────────────────────────────────────────────────────────────
+
+message TaskRequest {
+  string task_id    = 1;
+  string session_id = 2;
+  string payload    = 3;   // JSON-encoded task parameters
+  int32  priority   = 4;
+}
+
+message TaskResponse {
+  string task_id    = 1;
+  string result     = 2;   // JSON-encoded result
+  TaskStatus status = 3;
+  string error      = 4;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING     = 1;
+  TASK_STATUS_RUNNING     = 2;
+  TASK_STATUS_DONE        = 3;
+  TASK_STATUS_FAILED      = 4;
+}
+
+// ─── Sandbox I/O bridge ──────────────────────────────────────────────────────
+
+message SandboxWriteRequest {
+  string session_id = 1;
+  uint64 offset     = 2;
+  bytes  data       = 3;
+}
+
+message SandboxReadRequest {
+  string session_id = 1;
+  uint64 offset     = 2;
+  uint32 size       = 3;
+}
+
+message SandboxReadResponse {
+  bytes data  = 1;
+  bool  ok    = 2;
+  string error = 3;
+}
+
+// ─── Services ────────────────────────────────────────────────────────────────
+
+service HostService {
+  // Key validation & session management
+  rpc JoinSession(JoinRequest) returns (JoinResponse);
+
+  // Dispatch a task to the agent runtime
+  rpc SubmitTask(TaskRequest)  returns (TaskResponse);
+
+  // Binary sandbox I/O (delegated to core-engine via FFI)
+  rpc SandboxWrite(SandboxWriteRequest) returns (SandboxReadResponse);
+  rpc SandboxRead (SandboxReadRequest)  returns (SandboxReadResponse);
+}
+
+service AgentService {
+  // Host → Agent: push a task
+  rpc ExecuteTask(TaskRequest) returns (stream TaskResponse);
+}

@@ -1,0 +1,42 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+.app-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+button {
+  border: none;
+  background: #0f766e;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+button[disabled] {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+pre {
+  background: #111827;
+  color: #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.error {
+  border: 1px solid #ef4444;
+}

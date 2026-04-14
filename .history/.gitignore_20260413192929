@@ -1,0 +1,24 @@
+# Rust
+/target/
+Cargo.lock
+
+# Go
+host-service/vendor/
+*.exe
+
+# Python
+agent-runtime/.venv/
+agent-runtime/__pycache__/
+agent-runtime/**/__pycache__/
+agent-runtime/src/**/*.egg-info/
+agent-runtime/.env
+*.pyc
+
+# Generated protobuf code
+proto/gen/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
