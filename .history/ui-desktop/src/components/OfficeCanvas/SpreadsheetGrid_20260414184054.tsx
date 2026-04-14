@@ -24,7 +24,6 @@ type SpreadsheetGridProps = {
   viewportWidth?: number;
   viewportHeight?: number;
   revision?: number;
-  peakRow?: number | null;
 };
 
 function cellKey(row: number, col: number): string {
@@ -156,8 +155,7 @@ export default function SpreadsheetGrid({
   cellWidth = 100,
   cellHeight = 28,
   viewportWidth = 620,
-  viewportHeight = 308,
-  peakRow = null
+  viewportHeight = 308
 }: SpreadsheetGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // 持久資料快照
@@ -195,19 +193,10 @@ export default function SpreadsheetGrid({
       const y = row * cellHeight;
       // 清除該格
       ctx.clearRect(x, y, cellWidth, cellHeight);
-      // 若為峰值列，整列底色標示
-      if (peakRow && row === peakRow && col > 0) {
-        ctx.save();
-        ctx.fillStyle = "#fffbe6"; // 淡黃色
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-        ctx.restore();
-      } else {
-        ctx.save();
-        ctx.fillStyle = row === 0 || col === 0 ? "#131e34" : "#0b1220";
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-        ctx.restore();
-      }
+      // 重繪格線背景
       ctx.save();
+      ctx.fillStyle = row === 0 || col === 0 ? "#131e34" : "#0b1220";
+      ctx.fillRect(x, y, cellWidth, cellHeight);
       ctx.strokeStyle = "#24314d";
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y, cellWidth, cellHeight);
