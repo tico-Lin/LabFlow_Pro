@@ -422,7 +422,7 @@ mod tests {
     /// must not appear in `MainGraph` until `commit_to_main` is called.
     #[test]
     fn writes_stay_in_delta_until_commit() {
-        let main  = MainGraph::new(user_peer());
+        let mut main  = MainGraph::new(user_peer());
         let mut shadow = main.create_shadow(agent_peer());
 
         let agent_node = node(0xA6E1);
