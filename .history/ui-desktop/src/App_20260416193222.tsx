@@ -574,7 +574,7 @@ export default function App() {
                   focusRow={focusedRow}
                   focusCol={1}
                 />
-              </section>
+              </div>
               <section className="chart-shell app-surface workbench-panel">
                 <div className="panel-heading compact-panel-heading">
                   <div>

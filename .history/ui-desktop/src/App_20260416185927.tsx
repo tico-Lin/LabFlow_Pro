@@ -449,228 +449,186 @@ export default function App() {
     }
   };
 
-  const analyzePeak = async () => {
-    const voltages: number[] = [];
-    const currents: number[] = [];
-    const chartArr: { x: number; y: number }[] = [];
-
-    for (let row = 2; row <= spreadsheetData.rows; row += 1) {
-      const voltage = spreadsheetData.cells[`${row}:1`];
-      const current = spreadsheetData.cells[`${row}:2`];
-      if (typeof voltage === "number" && typeof current === "number") {
-        voltages.push(voltage);
-        currents.push(current);
-        chartArr.push({ x: voltage, y: current });
-      }
-    }
-
-    setChartData(chartArr);
-    if (voltages.length === 0 || currents.length === 0) {
-      setError("A、B 欄沒有可用數據");
-      return;
-    }
-
-    try {
-      const result = await invoke<PeakResult>("analyze_cv_data", { voltages, currents });
-      const nextPeakRow = result.index !== undefined ? result.index + 2 : null;
-      setPeakRow(nextPeakRow);
-      setFocusedRow(nextPeakRow);
-      setPeakIndex(result.index !== undefined ? result.index : undefined);
-      setRevision((prev) => prev + 1);
-      setWorkspaceView("spreadsheet");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
   return (
     <main className="app-shell">
-      <header className="app-toolbar">
-        <div className="toolbar-brand">
-          <p className="eyebrow">LabFlow Control Surface</p>
-          <h1>Professional Scientific Workspace</h1>
-          <p>以深色儀表板整合資料匯入、峰值分析、試算表與星圖推理。</p>
+      <h1>LabFlow Desktop Shell</h1>
+      <p>透過 Tauri IPC 取得 core-engine CRDT 星圖 snapshot。</p>
+      <MatrixDashboard />
+      <section className="office-canvas-shell">
+        <div className="workspace-header">
+          <div>
+            <h2>Office Scientific Canvas Sandbox</h2>
+            <p>資料節點會將畫面切到 Spreadsheet，筆記節點會開啟 NoteEditor。</p>
+          </div>
+          <div className="view-switcher">
+            <button
+              type="button"
+              className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
+              onClick={() => setWorkspaceView("spreadsheet")}
+            >
+              Spreadsheet
+            </button>
+            <button
+              type="button"
+              className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
+              onClick={() => setWorkspaceView("note")}
+              disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
+            >
+              Note
+            </button>
+          </div>
         </div>
-        <div className="toolbar-actions">
+        <div className="office-canvas-actions">
           <button onClick={importInstrumentData} disabled={ingestLoading} className="secondary-button">
-            {ingestLoading ? "匯入中..." : "匯入實驗數據"}
+            {ingestLoading ? "匯入中..." : "匯入實驗數據 (Import Data)"}
           </button>
-          <button onClick={() => void analyzePeak()} className="primary-button">
-            分析峰值
+          <button
+            onClick={async () => {
+              const voltages: number[] = [];
+              const currents: number[] = [];
+              const chartArr: { x: number; y: number }[] = [];
+              for (let row = 2; row <= spreadsheetData.rows; row++) {
+                const v = spreadsheetData.cells[`${row}:1`];
+                const c = spreadsheetData.cells[`${row}:2`];
+                if (typeof v === "number" && typeof c === "number") {
+                  voltages.push(v);
+                  currents.push(c);
+                  chartArr.push({ x: v, y: c });
+                }
+              }
+              setChartData(chartArr);
+              if (voltages.length === 0 || currents.length === 0) {
+                setError("A、B 欄沒有可用數據");
+                return;
+              }
+              try {
+                const result = await invoke<PeakResult>("analyze_cv_data", { voltages, currents });
+                setPeakRow(result.index !== undefined ? result.index + 2 : null);
+                setFocusedRow(result.index !== undefined ? result.index + 2 : null);
+                setPeakIndex(result.index !== undefined ? result.index : undefined);
+                setRevision((r) => r + 1);
+                setWorkspaceView("spreadsheet");
+              } catch (err) {
+                setError(err instanceof Error ? err.message : String(err));
+              }
+            }}
+            className="primary-button"
+          >
+            分析峰值 (Find Peak)
           </button>
           <button onClick={() => void fetchState()} disabled={loading} className="ghost-button">
             {loading ? "同步中..." : "同步星圖狀態"}
           </button>
         </div>
-      </header>
-
-      <div className="app-grid">
-        <aside className="app-sidebar app-surface">
-          <div className="panel-heading">
-            <p className="eyebrow">Sidebar</p>
-            <h2>Matrix Dashboard</h2>
-            <p>用於監看實驗流程、運算層級與卡片式工作摘要。</p>
+        {selectedGraphNode && (
+          <div className="selection-banner">
+            <strong>目前選取：</strong>
+            <span>{getGraphNodeLabel(selectedGraphNode)}</span>
+            <span className="metadata-chip">{normalizeGraphNodeType(selectedGraphNode.properties)}</span>
           </div>
-          {selectedGraphNode && (
-            <div className="selection-banner sidebar-selection-banner">
-              <strong>目前選取</strong>
-              <span>{getGraphNodeLabel(selectedGraphNode)}</span>
-              <span className="metadata-chip">{normalizeGraphNodeType(selectedGraphNode.properties)}</span>
+        )}
+        {workspaceView === "spreadsheet" ? (
+          <>
+            <div className="instrument-summary">
+              <div>
+                <strong>目前格式：</strong>
+                <span>{instrumentFormat}</span>
+              </div>
+              <div className="metadata-list">
+                {metadataEntries.length > 0 ? (
+                  metadataEntries.map(([key, value]) => (
+                    <span key={key} className="metadata-chip">
+                      {formatMetadataLabel(key)}：{formatMetadataValue(value)}
+                    </span>
+                  ))
+                ) : (
+                  <span className="metadata-chip">尚未收到 Metadata</span>
+                )}
+              </div>
             </div>
-          )}
-          <MatrixDashboard />
-        </aside>
-
-        <section className="app-main">
-          <div className="workspace-header app-surface">
-            <div>
-              <p className="eyebrow">Main View</p>
-              <h2>Scientific Workbench</h2>
-              <p>上半部維持 SpreadsheetGrid，下半部提供圖表檢視與峰值提交。</p>
-            </div>
-            <div className="view-switcher">
-              <button
-                type="button"
-                className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
-                onClick={() => setWorkspaceView("spreadsheet")}
-              >
-                Spreadsheet
-              </button>
-              <button
-                type="button"
-                className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
-                onClick={() => setWorkspaceView("note")}
-                disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
-              >
-                Note
-              </button>
-            </div>
-          </div>
-
-          {workspaceView === "spreadsheet" ? (
-            <>
-              <section className="office-canvas-shell app-surface workbench-panel">
-                <div className="instrument-summary">
-                  <div>
-                    <strong>目前格式：</strong>
-                    <span>{instrumentFormat}</span>
-                  </div>
-                  <div className="metadata-list">
-                    {metadataEntries.length > 0 ? (
-                      metadataEntries.map(([key, value]) => (
-                        <span key={key} className="metadata-chip">
-                          {formatMetadataLabel(key)}：{formatMetadataValue(value)}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="metadata-chip">尚未收到 Metadata</span>
-                    )}
-                  </div>
-                </div>
-                <SpreadsheetGrid
-                  data={spreadsheetData}
-                  revision={revision}
-                  peakRow={peakRow}
-                  focusRow={focusedRow}
-                  focusCol={1}
-                />
-              </section>
-              <section className="chart-shell app-surface workbench-panel">
-                <div className="panel-heading compact-panel-heading">
-                  <div>
-                    <p className="eyebrow">Chart View</p>
-                    <h3>Scientific Chart</h3>
-                    <p>峰值偵測結果會同步高亮，並可寫回右側星圖。</p>
-                  </div>
-                  {chartData.length > 0 && typeof peakIndex === "number" && (
-                    <button
-                      className="primary-button"
-                      onClick={async () => {
-                        if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
-                          return;
-                        }
-
-                        const { x: voltage, y: current } = chartData[peakIndex];
-                        setError(null);
-                        try {
-                          await invoke("commit_agent_analysis", {
-                            peakIndex,
-                            voltage,
-                            current
-                          });
-                          await fetchState();
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : String(err));
-                        }
-                      }}
-                    >
-                      確認並寫入星圖
-                    </button>
-                  )}
-                </div>
-                <ScientificChart
-                  data={chartData}
-                  instrumentFormat={instrumentFormat}
-                  peakIndex={peakIndex}
-                  width={960}
-                  height={360}
-                />
-              </section>
-            </>
-          ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
-            <NoteEditor
-              title={noteDraft.title}
-              content={noteDraft.content}
-              saving={noteSaving}
-              onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
-              onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
-              onSave={saveSelectedNote}
-              onClose={() => setWorkspaceView("spreadsheet")}
+            <SpreadsheetGrid
+              data={spreadsheetData}
+              revision={revision}
+              peakRow={peakRow}
+              focusRow={focusedRow}
+              focusCol={1}
             />
-          ) : (
-            <section className="note-empty-state app-surface">
-              <h3>尚未選取筆記節點</h3>
-              <p>雙擊星圖空白建立新筆記，或雙擊既有筆記節點開啟編輯器。</p>
-            </section>
-          )}
-
-          {error && <pre className="error">{error}</pre>}
-        </section>
-
-        <aside className="app-right-panel app-surface">
+            <div className="chart-shell">
+              <ScientificChart
+                data={chartData}
+                instrumentFormat={instrumentFormat}
+                peakIndex={peakIndex}
+                width={620}
+                height={280}
+              />
+              {chartData.length > 0 && typeof peakIndex === "number" && (
+                <button
+                  className="primary-button"
+                  style={{ marginTop: 16 }}
+                  onClick={async () => {
+                    if (typeof peakIndex !== "number" || !chartData[peakIndex]) return;
+                    const { x: voltage, y: current } = chartData[peakIndex];
+                    setError(null);
+                    try {
+                      await invoke("commit_agent_analysis", {
+                        peakIndex: peakIndex,
+                        voltage,
+                        current
+                      });
+                      await fetchState();
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : String(err));
+                    }
+                  }}
+                >
+                  確認並寫入星圖 (Approve & Commit to Graph)
+                </button>
+              )}
+            </div>
+          </>
+        ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
+          <NoteEditor
+            title={noteDraft.title}
+            content={noteDraft.content}
+            saving={noteSaving}
+            onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
+            onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
+            onSave={saveSelectedNote}
+            onClose={() => setWorkspaceView("spreadsheet")}
+          />
+        ) : (
+          <section className="note-empty-state">
+            <h3>尚未選取筆記節點</h3>
+            <p>雙擊星圖空白建立新筆記，或雙擊既有筆記節點開啟編輯器。</p>
+          </section>
+        )}
+      </section>
+      {error && <pre className="error">{error}</pre>}
+      {snapshot && (
+        <section className="graph-panel">
           <div className="graph-panel-header">
             <div>
-              <p className="eyebrow">Right Panel</p>
               <h2>Knowledge Graph 星圖</h2>
-              <p>保留獨立寬面板，讓力導向佈局與節點互動有足夠的觀察空間。</p>
+              <p>從 CRDT snapshot 解析節點與關係，透過 Canvas 即時模擬力導向佈局與手動血緣連線。</p>
             </div>
-            {snapshot && (
-              <div className="graph-stats">
-                <span>節點 {graphNodes.length}</span>
-                <span>邊 {graphEdges.length}</span>
-                <span>操作 {snapshot.op_count}</span>
-              </div>
-            )}
+            <div className="graph-stats">
+              <span>節點 {graphNodes.length}</span>
+              <span>邊 {graphEdges.length}</span>
+              <span>操作 {snapshot.op_count}</span>
+            </div>
           </div>
-          {snapshot ? (
-            <StarGraph
-              nodes={graphNodes}
-              edges={graphEdges}
-              onNodeSelect={handleGraphNodeSelect}
-              onNoteCreated={handleNoteCreated}
-              onGraphChanged={async () => {
-                await fetchState();
-              }}
-              onError={(message) => setError(message)}
-            />
-          ) : (
-            <section className="note-empty-state graph-empty-state">
-              <h3>尚未載入星圖</h3>
-              <p>同步後將在此顯示 CRDT snapshot 轉換出的關聯網路。</p>
-            </section>
-          )}
-        </aside>
-      </div>
+          <StarGraph
+            nodes={graphNodes}
+            edges={graphEdges}
+            onNodeSelect={handleGraphNodeSelect}
+            onNoteCreated={handleNoteCreated}
+            onGraphChanged={async () => {
+              await fetchState();
+            }}
+            onError={(message) => setError(message)}
+          />
+        </section>
+      )}
     </main>
   );
 }
