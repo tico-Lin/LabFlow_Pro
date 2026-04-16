@@ -78,8 +78,6 @@ function getNodeColor(type: string): { fill: string; stroke: string; glow: strin
   switch (type) {
     case "agent_analysis":
       return { fill: "#ffb84d", stroke: "#ff7a00", glow: "rgba(255, 122, 0, 0.28)" };
-    case "note":
-      return { fill: "#f5d0fe", stroke: "#a21caf", glow: "rgba(162, 28, 175, 0.24)" };
     case "cv":
       return { fill: "#6ee7b7", stroke: "#0f766e", glow: "rgba(16, 185, 129, 0.25)" };
     case "xrd":
@@ -333,6 +331,21 @@ export function StarGraph({
         target.vy -= sy;
       }
 
+      if (linkState) {
+        const sourceNode = nodeById.get(linkState.sourceNodeId);
+        if (sourceNode) {
+          context.save();
+          context.strokeStyle = "rgba(250, 204, 21, 0.95)";
+          context.lineWidth = 2.5;
+          context.setLineDash([9, 6]);
+          context.beginPath();
+          context.moveTo(sourceNode.x, sourceNode.y);
+          context.lineTo(linkState.pointerX, linkState.pointerY);
+          context.stroke();
+          context.restore();
+        }
+      }
+
       for (const node of simNodes) {
         const isDragging = dragState?.nodeId === node.id;
         node.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, node.vx * DAMPING));
@@ -424,21 +437,6 @@ export function StarGraph({
           context.textAlign = "center";
           context.textBaseline = "middle";
           context.fillText(edge.label, midX, midY + 0.5, labelWidth - 10);
-        }
-      }
-
-      if (linkState) {
-        const sourceNode = nodeById.get(linkState.sourceNodeId);
-        if (sourceNode) {
-          context.save();
-          context.strokeStyle = "rgba(250, 204, 21, 0.95)";
-          context.lineWidth = 2.5;
-          context.setLineDash([9, 6]);
-          context.beginPath();
-          context.moveTo(sourceNode.x, sourceNode.y);
-          context.lineTo(linkState.pointerX, linkState.pointerY);
-          context.stroke();
-          context.restore();
         }
       }
 

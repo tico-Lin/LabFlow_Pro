@@ -604,9 +604,7 @@ export default function App() {
             edges={graphEdges}
             onNodeSelect={handleGraphNodeSelect}
             onNoteCreated={handleNoteCreated}
-            onGraphChanged={async () => {
-              await fetchState();
-            }}
+            onGraphChanged={() => fetchState()}
             onError={(message) => setError(message)}
           />
         </section>

@@ -171,7 +171,6 @@ export default function SpreadsheetGrid({
   cellHeight = 28,
   viewportWidth = 620,
   viewportHeight = 308,
-  revision = 0,
   peakRow = null,
   focusRow = null,
   focusCol = 1

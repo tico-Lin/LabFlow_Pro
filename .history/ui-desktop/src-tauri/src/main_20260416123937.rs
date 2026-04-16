@@ -30,8 +30,8 @@ fn extract_insert_payload(ops: &[Operation]) -> Option<String> {
     })
 }
 
-fn emit_graph_updated(window: &Window, kind: &str, op_ids: Vec<String>) -> Result<(), String> {
-    let payload = json!({ "kind": kind, "op_ids": op_ids });
+fn emit_graph_updated(window: &Window, op_ids: Vec<String>) -> Result<(), String> {
+    let payload = json!({ "op_ids": op_ids });
     window
         .emit("graph-updated", payload)
         .map_err(|err| format!("failed to emit graph-updated: {err}"))
@@ -156,7 +156,7 @@ fn commit_agent_analysis(
         op_ids.push(op_link.id.to_string());
     }
 
-    emit_graph_updated(&window, "analysis_commit", op_ids)?;
+    emit_graph_updated(&window, op_ids)?;
     Ok(())
 }
 
@@ -193,7 +193,7 @@ fn create_note_node(
     bridge.ops_log.push(op);
     drop(bridge);
 
-    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    emit_graph_updated(&window, vec![op_id])?;
     Ok(node_id.to_string())
 }
 
@@ -230,7 +230,7 @@ fn update_note_node(
     bridge.ops_log.push(op);
     drop(bridge);
 
-    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    emit_graph_updated(&window, vec![op_id])?;
     Ok(())
 }
 
@@ -268,7 +268,7 @@ fn link_nodes(
     bridge.ops_log.push(op);
     drop(bridge);
 
-    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    emit_graph_updated(&window, vec![op_id])?;
     Ok(())
 }
 
