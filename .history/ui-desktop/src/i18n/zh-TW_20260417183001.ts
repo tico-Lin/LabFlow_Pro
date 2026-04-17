@@ -126,19 +126,7 @@ const zhTW = {
     description: "一次只處理一筆資料，讓試算表與圖表不再與其他視圖競爭空間。",
     currentDataset: "目前資料集：",
     noDataset: "尚未選取資料",
-    openGraph: "在星圖中查看",
-    runModule: "調用分析模組",
-    modal: {
-      eyebrow: "模組調用",
-      title: "調用分析模組",
-      description: "先選擇模組，再調整參數，最後將請求打包後執行。",
-      moduleLabel: "分析模組",
-      parametersTitle: "動態參數區",
-      parametersDescription: "下方表單會依照目前選取的模組自動切換。",
-      noParameters: "這個模組目前沒有可編輯參數。",
-      cancel: "取消",
-      run: "確認執行"
-    }
+    openGraph: "在星圖中查看"
   },
   graphView: {
     eyebrow: "Knowledge Star Map",

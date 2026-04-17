@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  buildAnalysisModules,
-  formatMetadataLabel,
-  formatMetadataValue,
-  type AnalysisModule,
-  type ThemeName
-} from "../app/labflow";
+import { formatMetadataLabel, formatMetadataValue, type ThemeName } from "../app/labflow";
 import { ScientificChart } from "../components/OfficeCanvas/ScientificChart";
 import SpreadsheetGrid, { type SpreadsheetGridData } from "../components/OfficeCanvas/SpreadsheetGrid";
 import { useTranslation } from "../i18n";
 
-type AnalysisModuleFormState = Record<string, string>;
+type AnalysisModuleId = "find-max-peak" | "generate-sine-wave";
+
+type AnalysisModuleFormState = {
+  threshold: string;
+  frequency: string;
+  amplitude: string;
+};
 
 type WorkbenchProps = {
   theme: ThemeName;
@@ -26,6 +26,8 @@ type WorkbenchProps = {
   selectedNodeId: string | null;
   selectedNodeLabel: string | null;
   onLoadNode: (nodeId: string) => boolean;
+  onAnalyze: () => void | Promise<void>;
+  onCommit: () => void | Promise<void>;
 };
 
 export default function Workbench({
@@ -40,7 +42,9 @@ export default function Workbench({
   metadataEntries,
   selectedNodeId,
   selectedNodeLabel,
-  onLoadNode
+  onLoadNode,
+  onAnalyze,
+  onCommit
 }: WorkbenchProps) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,19 +52,19 @@ export default function Workbench({
   const closeTimerRef = useRef<number | null>(null);
   const [isModalMounted, setIsModalMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const analysisModules = useMemo(() => buildAnalysisModules(t), [t]);
-  const [selectedModuleId, setSelectedModuleId] = useState<string>("find-max-peak");
-  const [moduleForm, setModuleForm] = useState<AnalysisModuleFormState>(() => {
-    const initialModule = buildAnalysisModules(t)[0];
-
-    return Object.fromEntries(
-      initialModule.parameters.map((parameter) => [parameter.key, String(parameter.defaultValue)])
-    );
+  const [selectedModuleId, setSelectedModuleId] = useState<AnalysisModuleId>("find-max-peak");
+  const [moduleForm, setModuleForm] = useState<AnalysisModuleFormState>({
+    threshold: "0.8",
+    frequency: "1",
+    amplitude: "1"
   });
 
-  const selectedModule = useMemo<AnalysisModule | undefined>(
-    () => analysisModules.find((module) => module.id === selectedModuleId),
-    [analysisModules, selectedModuleId]
+  const moduleOptions = useMemo(
+    () => [
+      { id: "find-max-peak" as const, label: t("modules.items.findMaxPeak.title") },
+      { id: "generate-sine-wave" as const, label: t("modules.items.generateSineWave.title") }
+    ],
+    [t]
   );
 
   useEffect(() => {
@@ -102,51 +106,33 @@ export default function Workbench({
   };
 
   const buildModulePayload = () => {
+    if (selectedModuleId === "find-max-peak") {
+      return {
+        moduleId: selectedModuleId,
+        params: {
+          threshold: Number(moduleForm.threshold)
+        }
+      };
+    }
+
     return {
-      selectedModule: selectedModule
-        ? {
-            id: selectedModule.id,
-            name: selectedModule.name,
-            supportedFormats: selectedModule.supportedFormats
-          }
-        : null,
-      parameters: (selectedModule?.parameters ?? []).reduce<Record<string, string | number | boolean>>((accumulator, parameter) => {
-        const rawValue = moduleForm[parameter.key] ?? String(parameter.defaultValue);
-
-        if (parameter.type === "number") {
-          accumulator[parameter.key] = Number(rawValue);
-          return accumulator;
-        }
-
-        if (parameter.type === "boolean") {
-          accumulator[parameter.key] = rawValue === "true";
-          return accumulator;
-        }
-
-        accumulator[parameter.key] = rawValue;
-        return accumulator;
-      }, {})
+      moduleId: selectedModuleId,
+      params: {
+        frequency: Number(moduleForm.frequency),
+        amplitude: Number(moduleForm.amplitude)
+      }
     };
   };
 
-  const handleRunAnalysisModule = () => {
+  const handleRunAnalysisModule = async () => {
     const payload = buildModulePayload();
-    console.log(payload);
+    console.log(JSON.stringify(payload, null, 2));
 
-    closeAnalysisModal();
-  };
-
-  const handleModuleSelect = (moduleId: string) => {
-    setSelectedModuleId(moduleId);
-
-    const nextModule = analysisModules.find((module) => module.id === moduleId);
-    if (!nextModule) {
-      return;
+    if (payload.moduleId === "find-max-peak") {
+      await onAnalyze();
     }
 
-    setModuleForm(
-      Object.fromEntries(nextModule.parameters.map((parameter) => [parameter.key, String(parameter.defaultValue)]))
-    );
+    closeAnalysisModal();
   };
 
   return (
@@ -212,6 +198,11 @@ export default function Workbench({
               <h3>{t("app.chart.title")}</h3>
               <p>{t("app.chart.description")}</p>
             </div>
+            {chartData.length > 0 && typeof peakIndex === "number" && (
+              <button type="button" className="primary-button" onClick={() => void onCommit()}>
+                {t("app.chart.commit")}
+              </button>
+            )}
           </div>
           <ScientificChart
             data={chartData}
@@ -225,9 +216,9 @@ export default function Workbench({
       </div>
 
       {isModalMounted ? (
-        <div className={`modal-backdrop analysis-modal-overlay${isModalOpen ? " is-open" : ""}`} onClick={closeAnalysisModal}>
+        <div className={`analysis-modal-overlay${isModalOpen ? " is-open" : ""}`} onClick={closeAnalysisModal}>
           <div
-            className={`modal-content analysis-modal${isModalOpen ? " is-open" : ""}`}
+            className={`analysis-modal${isModalOpen ? " is-open" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="analysis-modal-title"
@@ -246,11 +237,11 @@ export default function Workbench({
                 <span>{t("workbench.modal.moduleLabel")}</span>
                 <select
                   value={selectedModuleId}
-                  onChange={(event) => handleModuleSelect(event.target.value)}
+                  onChange={(event) => setSelectedModuleId(event.target.value as AnalysisModuleId)}
                 >
-                  {analysisModules.map((module) => (
+                  {moduleOptions.map((module) => (
                     <option key={module.id} value={module.id}>
-                      {module.name}
+                      {module.label}
                     </option>
                   ))}
                 </select>
@@ -262,23 +253,36 @@ export default function Workbench({
                   <p>{t("workbench.modal.parametersDescription")}</p>
                 </div>
 
-                {selectedModule?.parameters.length ? (
-                  <div className="analysis-modal-field-grid">
-                    {selectedModule.parameters.map((parameter) => (
-                      <label key={parameter.key} className="analysis-modal-field">
-                        <span>{parameter.name}</span>
-                        <input
-                          type={parameter.type === "number" ? "number" : "text"}
-                          step={parameter.type === "number" ? "0.1" : undefined}
-                          value={moduleForm[parameter.key] ?? String(parameter.defaultValue)}
-                          onChange={(event) => updateModuleField(parameter.key, event.target.value)}
-                        />
-                      </label>
-                    ))}
-                  </div>
+                {selectedModuleId === "find-max-peak" ? (
+                  <label className="analysis-modal-field">
+                    <span>{t("modules.items.findMaxPeak.parameters.threshold")}</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={moduleForm.threshold}
+                      onChange={(event) => updateModuleField("threshold", event.target.value)}
+                    />
+                  </label>
                 ) : (
-                  <div className="analysis-modal-empty-state">
-                    <p>{t("workbench.modal.noParameters")}</p>
+                  <div className="analysis-modal-field-grid">
+                    <label className="analysis-modal-field">
+                      <span>{t("modules.items.generateSineWave.parameters.frequency")}</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={moduleForm.frequency}
+                        onChange={(event) => updateModuleField("frequency", event.target.value)}
+                      />
+                    </label>
+                    <label className="analysis-modal-field">
+                      <span>{t("modules.items.generateSineWave.parameters.amplitude")}</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={moduleForm.amplitude}
+                        onChange={(event) => updateModuleField("amplitude", event.target.value)}
+                      />
+                    </label>
                   </div>
                 )}
               </div>

@@ -26,6 +26,7 @@ import {
   type GraphStateSnapshot,
   type GraphUpdatedPayload,
   type NoteDocument,
+  type PeakResult,
   type ThemeName
 } from "./app/labflow";
 import type { StarGraphEdge, StarGraphNode } from "./components/StarGraph";
@@ -638,6 +639,59 @@ export default function App() {
     []
   );
 
+  const analyzePeak = useCallback(async () => {
+    const voltages: number[] = [];
+    const currents: number[] = [];
+    const nextChartData: Array<{ x: number; y: number }> = [];
+
+    for (let row = 2; row <= spreadsheetData.rows; row += 1) {
+      const voltage = spreadsheetData.cells[`${row}:1`];
+      const current = spreadsheetData.cells[`${row}:2`];
+      if (typeof voltage === "number" && typeof current === "number") {
+        voltages.push(voltage);
+        currents.push(current);
+        nextChartData.push({ x: voltage, y: current });
+      }
+    }
+
+    setChartData(nextChartData);
+    if (voltages.length === 0 || currents.length === 0) {
+      setError(t("errors.noSpreadsheetData"));
+      return;
+    }
+
+    try {
+      const result = await invoke<PeakResult>("analyze_cv_data", { voltages, currents });
+      const nextPeakRow = result.index !== undefined ? result.index + 2 : null;
+      setPeakRow(nextPeakRow);
+      setFocusedRow(nextPeakRow);
+      setPeakIndex(result.index !== undefined ? result.index : undefined);
+      setRevision((prev) => prev + 1);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }, [spreadsheetData, t]);
+
+  const commitAnalysis = useCallback(async () => {
+    if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
+      return;
+    }
+
+    const { x: voltage, y: current } = chartData[peakIndex];
+    setError(null);
+    try {
+      await invoke("commit_agent_analysis", {
+        peakIndex,
+        voltage,
+        current
+      });
+      await fetchState();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }, [chartData, fetchState, peakIndex]);
+
   const handleGraphNodeSelect = useCallback((nodeId: string) => {
     setSelectedNodeId(nodeId);
   }, []);
@@ -780,6 +834,8 @@ export default function App() {
                   selectedNodeId={selectedNodeId}
                   selectedNodeLabel={selectedGraphNodeLabel}
                   onLoadNode={loadNodeIntoWorkbench}
+                  onAnalyze={analyzePeak}
+                  onCommit={commitAnalysis}
                 />
               }
             />
@@ -799,6 +855,8 @@ export default function App() {
                   selectedNodeId={selectedNodeId}
                   selectedNodeLabel={selectedGraphNodeLabel}
                   onLoadNode={loadNodeIntoWorkbench}
+                  onAnalyze={analyzePeak}
+                  onCommit={commitAnalysis}
                 />
               }
             />

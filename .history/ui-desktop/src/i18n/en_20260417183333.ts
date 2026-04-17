@@ -135,7 +135,6 @@ const en = {
       moduleLabel: "Analysis Module",
       parametersTitle: "Dynamic Parameters",
       parametersDescription: "The parameter form changes with the selected module.",
-      noParameters: "This module does not expose editable parameters yet.",
       cancel: "Cancel",
       run: "Run"
     }

@@ -1156,14 +1156,12 @@ select {
   gap: 1rem;
 }
 
-.modal-backdrop,
 .analysis-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   padding: 1.5rem;
   background: rgba(3, 8, 18, 0.48);
   backdrop-filter: blur(8px);
@@ -1172,13 +1170,11 @@ select {
   transition: opacity 180ms ease;
 }
 
-.modal-backdrop.is-open,
 .analysis-modal-overlay.is-open {
   opacity: 1;
   pointer-events: auto;
 }
 
-.modal-content,
 .analysis-modal {
   width: min(100%, 38rem);
   display: grid;
@@ -1195,7 +1191,6 @@ select {
   backdrop-filter: blur(20px) saturate(130%);
 }
 
-.modal-content.is-open,
 .analysis-modal.is-open {
   transform: translateY(0) scale(1);
   opacity: 1;
@@ -1248,18 +1243,6 @@ select {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-}
-
-.analysis-modal-empty-state {
-  padding: 0.9rem 1rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: 0.95rem;
-  background: var(--bg-ghost);
-}
-
-.analysis-modal-empty-state p {
-  margin: 0;
-  color: var(--text-secondary);
 }
 
 .graph-page-fullscreen {

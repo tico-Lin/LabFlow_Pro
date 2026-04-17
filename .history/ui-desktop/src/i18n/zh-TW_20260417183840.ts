@@ -135,7 +135,6 @@ const zhTW = {
       moduleLabel: "分析模組",
       parametersTitle: "動態參數區",
       parametersDescription: "下方表單會依照目前選取的模組自動切換。",
-      noParameters: "這個模組目前沒有可編輯參數。",
       cancel: "取消",
       run: "確認執行"
     }

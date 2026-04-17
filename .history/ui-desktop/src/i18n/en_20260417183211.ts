@@ -126,19 +126,7 @@ const en = {
     description: "Focus on one dataset at a time with a dedicated spreadsheet surface and analysis chart.",
     currentDataset: "Current dataset:",
     noDataset: "No dataset selected",
-    openGraph: "View in Star Graph",
-    runModule: "Run Analysis Module",
-    modal: {
-      eyebrow: "Module Runner",
-      title: "Run Analysis Module",
-      description: "Select a module, tune its parameters, then package the request before execution.",
-      moduleLabel: "Analysis Module",
-      parametersTitle: "Dynamic Parameters",
-      parametersDescription: "The parameter form changes with the selected module.",
-      noParameters: "This module does not expose editable parameters yet.",
-      cancel: "Cancel",
-      run: "Run"
-    }
+    openGraph: "View in Star Graph"
   },
   graphView: {
     eyebrow: "Knowledge Star Map",
