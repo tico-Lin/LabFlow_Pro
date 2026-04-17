@@ -40,7 +40,6 @@ type GraphNodeSnapshot = {
 
 type GraphStateSnapshot = {
   nodes: GraphNodeSnapshot[];
-  deleted_nodes?: string[];
   edges: Array<{ id: string; from: string; to: string; label: string }>;
   deleted_edges: string[];
   op_count: number;
@@ -54,7 +53,6 @@ type NoteDocument = {
 };
 
 type WorkspaceView = "spreadsheet" | "note";
-type WorkspaceTab = "analysis" | "graph";
 
 type InstrumentDataPayload = {
   instrument_format?: string;
@@ -236,7 +234,6 @@ export default function App() {
   const [peakIndex, setPeakIndex] = useState<number | undefined>(undefined);
   const [instrumentFormat, setInstrumentFormat] = useState<string>(() => t("common.unknown"));
   const [metadata, setMetadata] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("analysis");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("spreadsheet");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
@@ -463,6 +460,7 @@ export default function App() {
 
     if (normalizeGraphNodeType(selectedGraphNode.properties) === "note") {
       setNoteDraft(parseNoteDocument(selectedGraphNode, t("note.untitled")));
+      setWorkspaceView("note");
       return;
     }
 
@@ -499,10 +497,6 @@ export default function App() {
 
   const handleGraphNodeSelect = (nodeId: string) => {
     setSelectedNodeId(nodeId);
-  };
-
-  const handleGraphNodeActivate = (nodeId: string) => {
-    setSelectedNodeId(nodeId);
 
     const targetNode = snapshot?.nodes.find((node) => node.id === nodeId);
     if (!targetNode) {
@@ -511,28 +505,18 @@ export default function App() {
 
     if (normalizeGraphNodeType(targetNode.properties) === "note") {
       setNoteDraft(parseNoteDocument(targetNode, t("note.untitled")));
-      setActiveTab("analysis");
       setWorkspaceView("note");
       return;
     }
 
     setFocusedRow(resolveSpreadsheetAnchor(targetNode));
-    setActiveTab("analysis");
     setWorkspaceView("spreadsheet");
   };
 
   const handleNoteCreated = (nodeId: string) => {
     setSelectedNodeId(nodeId);
-    setActiveTab("analysis");
     setWorkspaceView("note");
     setNoteDraft({ title: t("note.untitled"), content: "" });
-  };
-
-  const handleNodeDeleted = (nodeId: string) => {
-    if (selectedNodeId === nodeId) {
-      setSelectedNodeId(null);
-      setWorkspaceView("spreadsheet");
-    }
   };
 
   const saveSelectedNote = async () => {
@@ -584,7 +568,6 @@ export default function App() {
       setFocusedRow(nextPeakRow);
       setPeakIndex(result.index !== undefined ? result.index : undefined);
       setRevision((prev) => prev + 1);
-      setActiveTab("analysis");
       setWorkspaceView("spreadsheet");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -647,189 +630,155 @@ export default function App() {
           <MatrixDashboard />
         </aside>
 
-        <section className="app-workspace">
+        <section className="app-main">
           <div className="workspace-header app-surface">
             <div>
-              <p className="eyebrow">
-                {t(activeTab === "analysis" ? "app.mainView.eyebrow" : "app.rightPanel.eyebrow")}
-              </p>
-              <h2>{t(activeTab === "analysis" ? "app.mainView.title" : "app.rightPanel.title")}</h2>
-              <p>
-                {t(
-                  activeTab === "analysis"
-                    ? "app.mainView.description"
-                    : "app.rightPanel.description"
-                )}
-              </p>
+              <p className="eyebrow">{t("app.mainView.eyebrow")}</p>
+              <h2>{t("app.mainView.title")}</h2>
+              <p>{t("app.mainView.description")}</p>
             </div>
-            <div className="workspace-controls">
-              <div className="workspace-tabs">
-                <button
-                  type="button"
-                  className={activeTab === "analysis" ? "primary-button is-active" : "ghost-button"}
-                  onClick={() => setActiveTab("analysis")}
-                >
-                  {t("app.tabs.analysis")}
-                </button>
-                <button
-                  type="button"
-                  className={activeTab === "graph" ? "primary-button is-active" : "ghost-button"}
-                  onClick={() => setActiveTab("graph")}
-                >
-                  {t("app.tabs.graph")}
-                </button>
-              </div>
-              {activeTab === "analysis" && (
-                <div className="view-switcher">
-                  <button
-                    type="button"
-                    className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
-                    onClick={() => setWorkspaceView("spreadsheet")}
-                  >
-                    {t("app.mainView.spreadsheet")}
-                  </button>
-                  <button
-                    type="button"
-                    className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
-                    onClick={() => setWorkspaceView("note")}
-                    disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
-                  >
-                    {t("app.mainView.note")}
-                  </button>
-                </div>
-              )}
+            <div className="view-switcher">
+              <button
+                type="button"
+                className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
+                onClick={() => setWorkspaceView("spreadsheet")}
+              >
+                {t("app.mainView.spreadsheet")}
+              </button>
+              <button
+                type="button"
+                className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
+                onClick={() => setWorkspaceView("note")}
+                disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
+              >
+                {t("app.mainView.note")}
+              </button>
             </div>
           </div>
 
-          {activeTab === "analysis" ? (
-            <div className="workspace-stack">
-              {workspaceView === "spreadsheet" ? (
-                <>
-                  <section className="office-canvas-shell app-surface workbench-panel">
-                    <div className="instrument-summary">
-                      <div>
-                        <strong>{t("app.instrument.currentFormat")}</strong>
-                        <span>{instrumentFormat}</span>
-                      </div>
-                      <div className="metadata-list">
-                        {metadataEntries.length > 0 ? (
-                          metadataEntries.map(([key, value]) => (
-                            <span key={key} className="metadata-chip">
-                              {formatMetadataLabel(key, t)}：{formatMetadataValue(value, t("common.na"))}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="metadata-chip">{t("app.instrument.noMetadata")}</span>
-                        )}
-                      </div>
-                    </div>
-                    <SpreadsheetGrid
-                      data={spreadsheetData}
-                      themeName={theme}
-                      revision={revision}
-                      peakRow={peakRow}
-                      focusRow={focusedRow}
-                      focusCol={1}
-                    />
-                  </section>
-                  <section className="chart-shell app-surface workbench-panel">
-                    <div className="panel-heading compact-panel-heading">
-                      <div>
-                        <p className="eyebrow">{t("app.chart.eyebrow")}</p>
-                        <h3>{t("app.chart.title")}</h3>
-                        <p>{t("app.chart.description")}</p>
-                      </div>
-                      {chartData.length > 0 && typeof peakIndex === "number" && (
-                        <button
-                          className="primary-button"
-                          onClick={async () => {
-                            if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
-                              return;
-                            }
-
-                            const { x: voltage, y: current } = chartData[peakIndex];
-                            setError(null);
-                            try {
-                              await invoke("commit_agent_analysis", {
-                                peakIndex,
-                                voltage,
-                                current
-                              });
-                              await fetchState();
-                            } catch (err) {
-                              setError(err instanceof Error ? err.message : String(err));
-                            }
-                          }}
-                        >
-                          {t("app.chart.commit")}
-                        </button>
-                      )}
-                    </div>
-                    <ScientificChart
-                      data={chartData}
-                      instrumentFormat={instrumentFormat}
-                      peakIndex={peakIndex}
-                      themeName={theme}
-                      width={960}
-                      height={360}
-                    />
-                  </section>
-                </>
-              ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
-                <NoteEditor
-                  title={noteDraft.title}
-                  content={noteDraft.content}
-                  saving={noteSaving}
-                  onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
-                  onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
-                  onSave={saveSelectedNote}
-                  onClose={() => setWorkspaceView("spreadsheet")}
+          {workspaceView === "spreadsheet" ? (
+            <>
+              <section className="office-canvas-shell app-surface workbench-panel">
+                <div className="instrument-summary">
+                  <div>
+                    <strong>{t("app.instrument.currentFormat")}</strong>
+                    <span>{instrumentFormat}</span>
+                  </div>
+                  <div className="metadata-list">
+                    {metadataEntries.length > 0 ? (
+                      metadataEntries.map(([key, value]) => (
+                        <span key={key} className="metadata-chip">
+                          {formatMetadataLabel(key, t)}：{formatMetadataValue(value, t("common.na"))}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="metadata-chip">{t("app.instrument.noMetadata")}</span>
+                    )}
+                  </div>
+                </div>
+                <SpreadsheetGrid
+                  data={spreadsheetData}
+                  revision={revision}
+                  peakRow={peakRow}
+                  focusRow={focusedRow}
+                  focusCol={1}
                 />
-              ) : (
-                <section className="note-empty-state app-surface">
-                  <h3>{t("app.noteEmpty.title")}</h3>
-                  <p>{t("app.noteEmpty.description")}</p>
-                </section>
-              )}
-            </div>
-          ) : snapshot ? (
-            <section className="app-surface graph-workspace-panel">
-              <div className="graph-panel-header">
-                <div>
-                  <p className="eyebrow">{t("app.rightPanel.eyebrow")}</p>
-                  <h2>{t("app.rightPanel.title")}</h2>
-                  <p>{t("app.rightPanel.description")}</p>
+              </section>
+              <section className="chart-shell app-surface workbench-panel">
+                <div className="panel-heading compact-panel-heading">
+                  <div>
+                    <p className="eyebrow">{t("app.chart.eyebrow")}</p>
+                    <h3>{t("app.chart.title")}</h3>
+                    <p>{t("app.chart.description")}</p>
+                  </div>
+                  {chartData.length > 0 && typeof peakIndex === "number" && (
+                    <button
+                      className="primary-button"
+                      onClick={async () => {
+                        if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
+                          return;
+                        }
+
+                        const { x: voltage, y: current } = chartData[peakIndex];
+                        setError(null);
+                        try {
+                          await invoke("commit_agent_analysis", {
+                            peakIndex,
+                            voltage,
+                            current
+                          });
+                          await fetchState();
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : String(err));
+                        }
+                      }}
+                    >
+                      {t("app.chart.commit")}
+                    </button>
+                  )}
                 </div>
-                <div className="graph-stats">
-                  <span>{t("app.graphStats.nodes", { count: graphNodes.length })}</span>
-                  <span>{t("app.graphStats.edges", { count: graphEdges.length })}</span>
-                  <span>{t("app.graphStats.operations", { count: snapshot.op_count })}</span>
-                </div>
-              </div>
-              <StarGraph
-                nodes={graphNodes}
-                edges={graphEdges}
-                themeName={theme}
-                selectedNodeId={selectedNodeId}
-                onNodeSelect={handleGraphNodeSelect}
-                onNodeActivate={handleGraphNodeActivate}
-                onNoteCreated={handleNoteCreated}
-                onNodeDeleted={handleNodeDeleted}
-                onGraphChanged={async () => {
-                  await fetchState();
-                }}
-                onError={(message) => setError(message)}
-              />
-            </section>
+                <ScientificChart
+                  data={chartData}
+                  instrumentFormat={instrumentFormat}
+                  peakIndex={peakIndex}
+                  width={960}
+                  height={360}
+                />
+              </section>
+            </>
+          ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
+            <NoteEditor
+              title={noteDraft.title}
+              content={noteDraft.content}
+              saving={noteSaving}
+              onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
+              onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
+              onSave={saveSelectedNote}
+              onClose={() => setWorkspaceView("spreadsheet")}
+            />
           ) : (
-            <section className="note-empty-state app-surface graph-empty-state">
-              <h3>{t("app.graphEmpty.title")}</h3>
-              <p>{t("app.graphEmpty.description")}</p>
+            <section className="note-empty-state app-surface">
+              <h3>{t("app.noteEmpty.title")}</h3>
+              <p>{t("app.noteEmpty.description")}</p>
             </section>
           )}
 
           {error && <pre className="error">{error}</pre>}
         </section>
+
+        <aside className="app-right-panel app-surface">
+          <div className="graph-panel-header">
+            <div>
+              <p className="eyebrow">{t("app.rightPanel.eyebrow")}</p>
+              <h2>{t("app.rightPanel.title")}</h2>
+              <p>{t("app.rightPanel.description")}</p>
+            </div>
+            {snapshot && (
+              <div className="graph-stats">
+                <span>{t("app.graphStats.nodes", { count: graphNodes.length })}</span>
+                <span>{t("app.graphStats.edges", { count: graphEdges.length })}</span>
+                <span>{t("app.graphStats.operations", { count: snapshot.op_count })}</span>
+              </div>
+            )}
+          </div>
+          {snapshot ? (
+            <StarGraph
+              nodes={graphNodes}
+              edges={graphEdges}
+              onNodeSelect={handleGraphNodeSelect}
+              onNoteCreated={handleNoteCreated}
+              onGraphChanged={async () => {
+                await fetchState();
+              }}
+              onError={(message) => setError(message)}
+            />
+          ) : (
+            <section className="note-empty-state graph-empty-state">
+              <h3>{t("app.graphEmpty.title")}</h3>
+              <p>{t("app.graphEmpty.description")}</p>
+            </section>
+          )}
+        </aside>
       </div>
     </main>
   );

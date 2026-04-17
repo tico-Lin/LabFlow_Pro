@@ -1,30 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n";
 
-type SpreadsheetTheme = {
-  canvasBg: string;
-  canvasHeaderBg: string;
-  canvasGrid: string;
-  canvasText: string;
-  canvasHighlight: string;
-  canvasLinked: string;
-  canvasSelection: string;
-};
-
-function readSpreadsheetTheme(): SpreadsheetTheme {
-  const styles = getComputedStyle(document.documentElement);
-
-  return {
-    canvasBg: styles.getPropertyValue("--canvas-grid-bg").trim(),
-    canvasHeaderBg: styles.getPropertyValue("--canvas-grid-header-bg").trim(),
-    canvasGrid: styles.getPropertyValue("--canvas-grid-line").trim(),
-    canvasText: styles.getPropertyValue("--canvas-grid-text").trim(),
-    canvasHighlight: styles.getPropertyValue("--canvas-grid-highlight").trim(),
-    canvasLinked: styles.getPropertyValue("--canvas-grid-linked").trim(),
-    canvasSelection: styles.getPropertyValue("--canvas-grid-selection").trim()
-  };
-}
-
 export type UUID = string;
 
 // Points to a CRDT operation identity in core-engine instead of storing static text.
@@ -47,7 +23,6 @@ type SpreadsheetGridProps = {
   cellHeight?: number;
   viewportWidth?: number;
   viewportHeight?: number;
-  themeName?: string;
   revision?: number;
   peakRow?: number | null;
   focusRow?: number | null;
@@ -66,15 +41,14 @@ function drawPointerBadge(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  size: number,
-  theme: SpreadsheetTheme
+  size: number
 ): void {
   const radius = Math.max(2, size * 0.24);
   const cx = x + size * 0.5;
   const cy = y + size * 0.5;
 
   ctx.save();
-  ctx.strokeStyle = theme.canvasLinked;
+  ctx.strokeStyle = "#f59e0b";
   ctx.lineWidth = 1.4;
 
   ctx.beginPath();
@@ -100,8 +74,7 @@ function drawGrid(
   cellHeight: number,
   peakRow: number | null,
   activeCell: { r: number; c: number } | null,
-  linkedLabel: string,
-  theme: SpreadsheetTheme
+  linkedLabel: string
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const totalWidth = (data.cols + 1) * cellWidth;
@@ -120,14 +93,14 @@ function drawGrid(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, totalWidth, totalHeight);
 
-  ctx.fillStyle = theme.canvasBg;
+  ctx.fillStyle = "#0b1220";
   ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-  ctx.fillStyle = theme.canvasHeaderBg;
+  ctx.fillStyle = "#131e34";
   ctx.fillRect(0, 0, totalWidth, cellHeight);
   ctx.fillRect(0, 0, cellWidth, totalHeight);
 
-  ctx.strokeStyle = theme.canvasGrid;
+  ctx.strokeStyle = "#24314d";
   ctx.lineWidth = 1;
 
   for (let row = 0; row <= data.rows; row += 1) {
@@ -148,7 +121,7 @@ function drawGrid(
 
   ctx.textBaseline = "middle";
   ctx.font = "12px Segoe UI";
-  ctx.fillStyle = theme.canvasText;
+  ctx.fillStyle = "#d1d9eb";
 
   for (let col = 1; col <= data.cols; col += 1) {
     const label = String.fromCharCode(64 + col);
@@ -167,16 +140,16 @@ function drawGrid(
       const y = row * cellHeight;
 
       if (peakRow && row === peakRow) {
-        ctx.fillStyle = theme.canvasHighlight;
+        ctx.fillStyle = "#fff7d6";
         ctx.fillRect(x + 1, y + 1, cellWidth - 2, cellHeight - 2);
       }
 
       if (isCellPointer(value)) {
-        drawPointerBadge(ctx, x + 6, y + 6, Math.min(cellWidth, cellHeight) - 12, theme);
-        ctx.fillStyle = theme.canvasLinked;
+        drawPointerBadge(ctx, x + 6, y + 6, Math.min(cellWidth, cellHeight) - 12);
+        ctx.fillStyle = "#f8bf4d";
         ctx.font = "11px Segoe UI";
         ctx.fillText(linkedLabel, x + 22, y + cellHeight * 0.5);
-        ctx.fillStyle = theme.canvasText;
+        ctx.fillStyle = "#d1d9eb";
         ctx.font = "12px Segoe UI";
       } else if (value !== null) {
         const text = String(value);
@@ -185,7 +158,7 @@ function drawGrid(
 
       if (activeCell && activeCell.r === row && activeCell.c === col) {
         ctx.save();
-        ctx.strokeStyle = theme.canvasSelection;
+        ctx.strokeStyle = "#2563eb";
         ctx.lineWidth = 2;
         ctx.strokeRect(x + 1.5, y + 1.5, cellWidth - 3, cellHeight - 3);
         ctx.restore();
@@ -202,7 +175,6 @@ function drawCell(
   peakRow: number | null,
   active: { r: number; c: number } | null,
   linkedLabel: string,
-  theme: SpreadsheetTheme,
   row: number,
   col: number
 ): void {
@@ -210,37 +182,37 @@ function drawCell(
   const y = row * cellHeight;
 
   if (row === 0 && col === 0) {
-    ctx.fillStyle = theme.canvasHeaderBg;
+    ctx.fillStyle = "#131e34";
     ctx.fillRect(x, y, cellWidth, cellHeight);
   } else if (row === 0) {
-    ctx.fillStyle = theme.canvasHeaderBg;
+    ctx.fillStyle = "#131e34";
     ctx.fillRect(x, y, cellWidth, cellHeight);
-    ctx.fillStyle = theme.canvasText;
+    ctx.fillStyle = "#d1d9eb";
     ctx.font = "12px Segoe UI";
     ctx.textBaseline = "middle";
     ctx.fillText(String.fromCharCode(64 + col), x + 8, y + cellHeight * 0.5);
   } else if (col === 0) {
-    ctx.fillStyle = theme.canvasHeaderBg;
+    ctx.fillStyle = "#131e34";
     ctx.fillRect(x, y, cellWidth, cellHeight);
-    ctx.fillStyle = theme.canvasText;
+    ctx.fillStyle = "#d1d9eb";
     ctx.font = "12px Segoe UI";
     ctx.textBaseline = "middle";
     ctx.fillText(String(row), x + 8, y + cellHeight * 0.5);
   } else {
-    ctx.fillStyle = peakRow && row === peakRow ? theme.canvasHighlight : theme.canvasBg;
+    ctx.fillStyle = peakRow && row === peakRow ? "#fff7d6" : "#0b1220";
     ctx.fillRect(x, y, cellWidth, cellHeight);
 
     const value = data.cells[cellKey(row, col)] ?? null;
-    ctx.fillStyle = theme.canvasText;
+    ctx.fillStyle = "#d1d9eb";
     ctx.font = "12px Segoe UI";
     ctx.textBaseline = "middle";
 
     if (isCellPointer(value)) {
-      drawPointerBadge(ctx, x + 6, y + 6, Math.min(cellWidth, cellHeight) - 12, theme);
-      ctx.fillStyle = theme.canvasLinked;
+      drawPointerBadge(ctx, x + 6, y + 6, Math.min(cellWidth, cellHeight) - 12);
+      ctx.fillStyle = "#f8bf4d";
       ctx.font = "11px Segoe UI";
       ctx.fillText(linkedLabel, x + 22, y + cellHeight * 0.5);
-      ctx.fillStyle = theme.canvasText;
+      ctx.fillStyle = "#d1d9eb";
       ctx.font = "12px Segoe UI";
     } else if (value !== null) {
       ctx.fillText(String(value), x + 8, y + cellHeight * 0.5);
@@ -248,14 +220,14 @@ function drawCell(
 
     if (active && active.r === row && active.c === col) {
       ctx.save();
-      ctx.strokeStyle = theme.canvasSelection;
+      ctx.strokeStyle = "#2563eb";
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 1.5, y + 1.5, cellWidth - 3, cellHeight - 3);
       ctx.restore();
     }
   }
 
-  ctx.strokeStyle = theme.canvasGrid;
+  ctx.strokeStyle = "#24314d";
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, cellWidth, cellHeight);
 }
@@ -266,7 +238,6 @@ export default function SpreadsheetGrid({
   cellHeight = 28,
   viewportWidth = 620,
   viewportHeight = 308,
-  themeName,
   revision = 0,
   peakRow = null,
   focusRow = null,
@@ -287,16 +258,7 @@ export default function SpreadsheetGrid({
       return;
     }
 
-    drawGrid(
-      canvas,
-      dataRef.current,
-      cellWidth,
-      cellHeight,
-      peakRow,
-      activeCell.current,
-      t("spreadsheet.linked"),
-      readSpreadsheetTheme()
-    );
+    drawGrid(canvas, dataRef.current, cellWidth, cellHeight, peakRow, activeCell.current, t("spreadsheet.linked"));
   }
 
   function drawDirtyCells() {
@@ -327,7 +289,6 @@ export default function SpreadsheetGrid({
         peakRow,
         activeCell.current,
         t("spreadsheet.linked"),
-        readSpreadsheetTheme(),
         row,
         col
       );
@@ -351,7 +312,7 @@ export default function SpreadsheetGrid({
   useEffect(() => {
     dataRef.current = data;
     drawCurrentGrid();
-  }, [data, cellWidth, cellHeight, peakRow, themeName, t]);
+  }, [data, cellWidth, cellHeight, peakRow, t]);
 
   useEffect(() => {
     if (!focusRow || !focusCol) {
@@ -366,11 +327,11 @@ export default function SpreadsheetGrid({
       viewport.scrollTo({ left: targetLeft, top: targetTop, behavior: "smooth" });
     }
     drawCurrentGrid();
-  }, [focusRow, focusCol, cellWidth, cellHeight, revision, peakRow, themeName, t]);
+  }, [focusRow, focusCol, cellWidth, cellHeight, revision, peakRow, t]);
 
   useEffect(() => {
     drawCurrentGrid();
-  }, [revision, themeName, t]);
+  }, [revision, t]);
 
   function getCanvasPosition(event: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;

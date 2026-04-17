@@ -783,10 +783,6 @@ mod tests {
         )
     }
 
-    fn delete_node(node_id: NodeId, ts: u64, peer: PeerId) -> Operation {
-        Operation::new(OpKind::DeleteNode { node_id }, LamportTs(ts), peer)
-    }
-
     fn link(edge_id: EdgeId, from: NodeId, to: NodeId, ts: u64, peer: PeerId) -> Operation {
         Operation::new(
             OpKind::LinkNodes { edge_id, from, to, label: "relates".into() },
@@ -973,47 +969,6 @@ mod tests {
         let state = merge(&ops, &[]);
         assert!(!state.edges.contains_key(&e));
         assert!(state.deleted_edges.contains(&e));
-    }
-
-    #[test]
-    fn delete_node_tombstones_node_and_incident_edges() {
-        let peer = fixed_peer(0xA1);
-        let node_a = fixed_node(0x01);
-        let node_b = fixed_node(0x02);
-        let edge_ab = fixed_edge(0x10);
-
-        let state = merge(
-            &[
-                insert(node_a, "Star A", 1, peer),
-                insert(node_b, "Star B", 2, peer),
-                link(edge_ab, node_a, node_b, 3, peer),
-                delete_node(node_a, 4, peer),
-            ],
-            &[],
-        );
-
-        assert!(!state.nodes.contains_key(&node_a));
-        assert!(state.deleted_nodes.contains(&node_a));
-        assert!(!state.edges.contains_key(&edge_ab));
-        assert!(state.deleted_edges.contains(&edge_ab));
-    }
-
-    #[test]
-    fn delete_node_blocks_later_updates_for_same_id() {
-        let peer = fixed_peer(0xA2);
-        let node = fixed_node(0x20);
-
-        let state = merge(
-            &[
-                insert(node, "Before", 1, peer),
-                delete_node(node, 2, peer),
-                update(node, "After", 3, peer),
-            ],
-            &[],
-        );
-
-        assert!(!state.nodes.contains_key(&node));
-        assert!(state.deleted_nodes.contains(&node));
     }
 
     // ── log_codec ─────────────────────────────────────────────────────────────

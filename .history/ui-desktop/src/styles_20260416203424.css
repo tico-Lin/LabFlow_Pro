@@ -271,20 +271,11 @@ select {
 }
 
 .toolbar-actions,
-.workspace-tabs,
 .view-switcher,
 .graph-stats,
-.note-editor-actions,
-.star-graph-controls {
+.note-editor-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.workspace-controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -311,7 +302,7 @@ select {
 .app-grid {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(340px, 31vw);
   gap: 1rem;
 }
 
@@ -327,12 +318,13 @@ select {
 }
 
 .app-sidebar,
-.app-workspace {
+.app-right-panel,
+.app-main {
   min-height: 0;
 }
 
 .app-sidebar,
-.app-workspace {
+.app-right-panel {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -340,9 +332,9 @@ select {
   overflow: auto;
 }
 
-.workspace-stack {
-  display: flex;
-  flex-direction: column;
+.app-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 1rem;
 }
 
@@ -350,7 +342,6 @@ select {
 .graph-panel-header,
 .dashboard-header,
 .star-graph-header,
-.workspace-controls,
 .note-editor-header,
 .panel-heading,
 .compact-panel-heading {
@@ -476,10 +467,6 @@ select {
   margin-bottom: 1rem;
 }
 
-.graph-workspace-panel {
-  min-height: 0;
-}
-
 .graph-panel-header h2 {
   margin: 0 0 0.35rem;
   font-size: 1.15rem;
@@ -560,11 +547,12 @@ select {
 .star-graph-canvas {
   display: block;
   width: 100%;
-  min-height: min(72vh, 780px);
+  min-height: min(70vh, 760px);
   border: 1px solid var(--border-graph);
   border-radius: 1rem;
   background: radial-gradient(circle at top, var(--bg-graph-radial), transparent 35%), var(--canvas-graph-bg-start);
   box-shadow: inset 0 1px 0 var(--border-toolbar);
+  margin-bottom: 1rem;
 }
 
 .dashboard-header h2 {
@@ -723,6 +711,21 @@ pre {
 @media (max-width: 1280px) {
   .app-grid {
     grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar main"
+      "right right";
+  }
+
+  .app-sidebar {
+    grid-area: sidebar;
+  }
+
+  .app-main {
+    grid-area: main;
+  }
+
+  .app-right-panel {
+    grid-area: right;
   }
 
   .star-graph-canvas {
@@ -742,7 +745,6 @@ pre {
 
   .app-toolbar,
   .workspace-header,
-  .workspace-controls,
   .dashboard-header,
   .graph-panel-header,
   .star-graph-header,
@@ -753,18 +755,14 @@ pre {
   }
 
   .toolbar-actions,
-  .workspace-tabs,
   .view-switcher,
-  .graph-stats,
-  .star-graph-controls {
+  .graph-stats {
     width: 100%;
     justify-content: flex-start;
   }
 
   .toolbar-actions button,
-  .workspace-tabs button,
-  .view-switcher button,
-  .star-graph-controls button {
+  .view-switcher button {
     flex: 1 1 180px;
   }
 
@@ -784,10 +782,9 @@ pre {
 
   .app-toolbar,
   .app-sidebar,
-  .app-workspace,
+  .app-right-panel,
   .workspace-header,
   .workbench-panel,
-  .graph-workspace-panel,
   .note-editor-shell,
   .note-empty-state {
     padding: 0.9rem;

@@ -1,38 +1,22 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 
-type ChartTheme = {
-  chartBg: string;
-  chartGrid: string;
-  chartTitle: string;
-  chartLabel: string;
-  chartLine: string;
-  warning: string;
-  chartTooltipBg: string;
-};
-
-function readChartTheme(): ChartTheme {
-  const styles = getComputedStyle(document.documentElement);
-
-  return {
-    chartBg: styles.getPropertyValue('--canvas-chart-bg').trim(),
-    chartGrid: styles.getPropertyValue('--canvas-chart-grid').trim(),
-    chartTitle: styles.getPropertyValue('--canvas-chart-title').trim(),
-    chartLabel: styles.getPropertyValue('--canvas-chart-label').trim(),
-    chartLine: styles.getPropertyValue('--canvas-chart-line').trim(),
-    warning: styles.getPropertyValue('--warning-color').trim(),
-    chartTooltipBg: styles.getPropertyValue('--canvas-chart-tooltip-bg').trim()
-  };
-}
-
 export interface ScientificChartProps {
   data: { x: number; y: number }[];
   peakIndex?: number;
   instrumentFormat?: string;
-  themeName?: string;
   width: number;
   height: number;
 }
+
+// const AXIS_COLOR = '#888'; // 已移除未使用變數
+const CHART_BG = '#0b1220';
+const GRID_COLOR = 'rgba(148, 163, 184, 0.28)';
+const TITLE_COLOR = '#e2e8f0';
+const LABEL_COLOR = '#94a3b8';
+const LINE_COLOR = '#38bdf8';
+const PEAK_CIRCLE_COLOR = '#fb7185';
+const PEAK_LABEL_BG = 'rgba(15,23,42,0.92)';
 
 function resolveChartLabels(instrumentFormat: string | undefined, t: (key: string) => string) {
   const normalized = instrumentFormat?.toLowerCase();
@@ -66,24 +50,23 @@ function drawChart(
   peakIndex: number | undefined,
   instrumentFormat: string | undefined,
   t: (key: string) => string,
-  theme: ChartTheme,
   width: number,
   height: number,
   dpr: number
 ) {
   ctx.save();
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = theme.chartBg;
+  ctx.fillStyle = CHART_BG;
   ctx.fillRect(0, 0, width, height);
 
   const labels = resolveChartLabels(instrumentFormat, t);
 
-  ctx.fillStyle = theme.chartTitle;
+  ctx.fillStyle = TITLE_COLOR;
   ctx.font = `${16 * dpr}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText(labels.title, width / 2, 22 * dpr);
 
-  ctx.fillStyle = theme.chartLabel;
+  ctx.fillStyle = LABEL_COLOR;
   ctx.font = `${12 * dpr}px sans-serif`;
   ctx.fillText(labels.x, width / 2, height - 10 * dpr);
   ctx.save();
@@ -118,7 +101,7 @@ function drawChart(
   const scaleY = chartH / (yMax - yMin || 1);
 
   // 畫輔助線
-  ctx.strokeStyle = theme.chartGrid;
+  ctx.strokeStyle = GRID_COLOR;
   ctx.lineWidth = 1 * dpr;
   ctx.beginPath();
   // X軸
@@ -130,7 +113,7 @@ function drawChart(
   ctx.stroke();
 
   // 畫折線
-  ctx.strokeStyle = theme.chartLine;
+  ctx.strokeStyle = LINE_COLOR;
   ctx.lineWidth = 2 * dpr;
   ctx.beginPath();
   data.forEach((pt, i) => {
@@ -154,7 +137,7 @@ function drawChart(
     const px = leftPadding + (pt.x - xMin) * scaleX;
     const py = height - bottomPadding - (pt.y - yMin) * scaleY;
     ctx.save();
-    ctx.strokeStyle = theme.warning;
+    ctx.strokeStyle = PEAK_CIRCLE_COLOR;
     ctx.lineWidth = 2 * dpr;
     ctx.beginPath();
     ctx.arc(px, py, 8 * dpr, 0, 2 * Math.PI);
@@ -165,9 +148,9 @@ function drawChart(
     const textW = ctx.measureText(label).width;
     const labelX = px + 12 * dpr;
     const labelY = py - 8 * dpr;
-    ctx.fillStyle = theme.chartTooltipBg;
+    ctx.fillStyle = PEAK_LABEL_BG;
     ctx.fillRect(labelX - 2 * dpr, labelY - 14 * dpr, textW + 4 * dpr, 18 * dpr);
-    ctx.fillStyle = theme.warning;
+    ctx.fillStyle = PEAK_CIRCLE_COLOR;
     ctx.fillText(label, labelX, labelY);
     ctx.restore();
   }
@@ -179,7 +162,6 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
   data,
   peakIndex,
   instrumentFormat,
-  themeName,
   width,
   height,
 }) => {
@@ -189,15 +171,14 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const theme = readChartTheme();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      drawChart(ctx, data, peakIndex, instrumentFormat, t, theme, canvas.width, canvas.height, dpr);
+      drawChart(ctx, data, peakIndex, instrumentFormat, t, canvas.width, canvas.height, dpr);
     }
-  }, [data, peakIndex, instrumentFormat, themeName, width, height, t]);
+  }, [data, peakIndex, instrumentFormat, width, height, t]);
 
   return <canvas ref={canvasRef} />;
 };

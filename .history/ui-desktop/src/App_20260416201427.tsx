@@ -13,21 +13,6 @@ import SpreadsheetGrid, {
   type SpreadsheetGridData
 } from "./components/OfficeCanvas/SpreadsheetGrid";
 import { useTranslation, type Language } from "./i18n";
-import en from "./i18n/en";
-import zhTW from "./i18n/zh-TW";
-
-type ThemeName = "dark" | "light";
-
-const THEME_STORAGE_KEY = "labflow.theme";
-
-function getInitialTheme(): ThemeName {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "light" || stored === "dark" ? stored : "dark";
-}
 
 type PeakResult = { index: number; voltage: number; current: number };
 
@@ -40,7 +25,6 @@ type GraphNodeSnapshot = {
 
 type GraphStateSnapshot = {
   nodes: GraphNodeSnapshot[];
-  deleted_nodes?: string[];
   edges: Array<{ id: string; from: string; to: string; label: string }>;
   deleted_edges: string[];
   op_count: number;
@@ -54,7 +38,6 @@ type NoteDocument = {
 };
 
 type WorkspaceView = "spreadsheet" | "note";
-type WorkspaceTab = "analysis" | "graph";
 
 type InstrumentDataPayload = {
   instrument_format?: string;
@@ -65,7 +48,7 @@ type InstrumentDataPayload = {
   };
 };
 
-function normalizeInstrumentFormat(format: string | undefined, fallbackLabel: string): string {
+function normalizeInstrumentFormat(format?: string, fallbackLabel: string): string {
   if (!format) {
     return fallbackLabel;
   }
@@ -160,7 +143,7 @@ function formatMetadataLabel(key: string, t: (key: string) => string): string {
     .join(" ");
 }
 
-function formatMetadataValue(value: unknown, naLabel: string): string {
+function formatMetadataValue(value: unknown): string {
   if (typeof value === "number") {
     return Number.isInteger(value) ? String(value) : value.toString();
   }
@@ -168,7 +151,7 @@ function formatMetadataValue(value: unknown, naLabel: string): string {
     return value;
   }
   if (value === null || value === undefined) {
-    return naLabel;
+    return "N/A";
   }
 
   return JSON.stringify(value);
@@ -212,9 +195,9 @@ function resolveSpreadsheetAnchor(node: GraphNodeSnapshot): number {
   return Number.isFinite(rawAnchor) && rawAnchor >= 2 ? rawAnchor : 2;
 }
 
-function getGraphNodeLabel(node: GraphNodeSnapshot, fallbackTitle: string): string {
+function getGraphNodeLabel(node: GraphNodeSnapshot): string {
   if (normalizeGraphNodeType(node.properties) === "note") {
-    return parseNoteDocument(node, fallbackTitle).title;
+    return parseNoteDocument(node, "Untitled Note").title;
   }
 
   return node.label;
@@ -222,7 +205,6 @@ function getGraphNodeLabel(node: GraphNodeSnapshot, fallbackTitle: string): stri
 
 export default function App() {
   const { t, language, changeLanguage } = useTranslation();
-  const [theme, setTheme] = useState<ThemeName>(() => getInitialTheme());
   const [snapshot, setSnapshot] = useState<GraphStateSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [ingestLoading, setIngestLoading] = useState(false);
@@ -236,17 +218,11 @@ export default function App() {
   const [peakIndex, setPeakIndex] = useState<number | undefined>(undefined);
   const [instrumentFormat, setInstrumentFormat] = useState<string>(() => t("common.unknown"));
   const [metadata, setMetadata] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("analysis");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("spreadsheet");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState<NoteDocument>({ title: "", content: "" });
   const [noteSaving, setNoteSaving] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
 
   const metadataEntries = useMemo(() => {
     if (!metadata || typeof metadata !== "object") {
@@ -259,24 +235,10 @@ export default function App() {
   useEffect(() => {
     setSpreadsheetData((prev) => {
       const demoGrid = createDemoSpreadsheetData(t);
-      const knownDemoHeaders = new Set<string>([
-        en.spreadsheet.demo.time,
-        en.spreadsheet.demo.sensorA,
-        en.spreadsheet.demo.sensorB,
-        zhTW.spreadsheet.demo.time,
-        zhTW.spreadsheet.demo.sensorA,
-        zhTW.spreadsheet.demo.sensorB,
-        t("spreadsheet.demo.time"),
-        t("spreadsheet.demo.sensorA"),
-        t("spreadsheet.demo.sensorB")
-      ]);
       const isDemoGrid =
-        typeof prev.cells["1:1"] === "string" &&
-        typeof prev.cells["1:2"] === "string" &&
-        typeof prev.cells["1:3"] === "string" &&
-        knownDemoHeaders.has(prev.cells["1:1"]) &&
-        knownDemoHeaders.has(prev.cells["1:2"]) &&
-        knownDemoHeaders.has(prev.cells["1:3"]);
+        prev.cells["1:1"] === "time" ||
+        prev.cells["1:1"] === "時間" ||
+        prev.cells["1:1"] === t("spreadsheet.demo.time");
 
       if (!chartData.length && isDemoGrid) {
         return demoGrid;
@@ -286,17 +248,34 @@ export default function App() {
     });
 
     setInstrumentFormat((prev) => {
-      if (
-        prev === en.common.unknown ||
-        prev === zhTW.common.unknown ||
-        prev === t("common.unknown")
-      ) {
+      if (prev === "Unknown" || prev === "未知" || prev === t("common.unknown")) {
         return t("common.unknown");
       }
 
       return prev;
     });
   }, [chartData.length, t]);
+
+  const selectedGraphNodeLabel = useMemo(() => {
+    if (!selectedGraphNode) {
+      return null;
+    }
+
+    return normalizeGraphNodeType(selectedGraphNode.properties) === "note"
+      ? parseNoteDocument(selectedGraphNode, t("note.untitled")).title
+      : selectedGraphNode.label;
+  }, [selectedGraphNode, t]);
+
+  const selectedGraphNodeTypeLabel = useMemo(() => {
+    if (!selectedGraphNode) {
+      return null;
+    }
+
+    const type = normalizeGraphNodeType(selectedGraphNode.properties);
+    return t(`graph.nodeTypes.${type}`) === `graph.nodeTypes.${type}`
+      ? t("graph.nodeTypes.unknown")
+      : t(`graph.nodeTypes.${type}`);
+  }, [selectedGraphNode, t]);
 
   const graphNodes = useMemo<StarGraphNode[]>(() => {
     if (!snapshot) {
@@ -305,10 +284,10 @@ export default function App() {
 
     return snapshot.nodes.map((node) => ({
       id: node.id,
-      label: getGraphNodeLabel(node, t("note.untitled")),
+      label: getGraphNodeLabel(node),
       type: normalizeGraphNodeType(node.properties)
     }));
-  }, [snapshot, t]);
+  }, [snapshot]);
 
   const graphEdges = useMemo<StarGraphEdge[]>(() => {
     if (!snapshot) {
@@ -332,27 +311,6 @@ export default function App() {
 
     return snapshot.nodes.find((node) => node.id === selectedNodeId) ?? null;
   }, [snapshot, selectedNodeId]);
-
-  const selectedGraphNodeLabel = useMemo(() => {
-    if (!selectedGraphNode) {
-      return null;
-    }
-
-    return normalizeGraphNodeType(selectedGraphNode.properties) === "note"
-      ? parseNoteDocument(selectedGraphNode, t("note.untitled")).title
-      : selectedGraphNode.label;
-  }, [selectedGraphNode, t]);
-
-  const selectedGraphNodeTypeLabel = useMemo(() => {
-    if (!selectedGraphNode) {
-      return null;
-    }
-
-    const type = normalizeGraphNodeType(selectedGraphNode.properties);
-    return t(`graph.nodeTypes.${type}`) === `graph.nodeTypes.${type}`
-      ? t("graph.nodeTypes.unknown")
-      : t(`graph.nodeTypes.${type}`);
-  }, [selectedGraphNode, t]);
 
   const fetchState = async (): Promise<GraphStateSnapshot | null> => {
     setLoading(true);
@@ -463,6 +421,7 @@ export default function App() {
 
     if (normalizeGraphNodeType(selectedGraphNode.properties) === "note") {
       setNoteDraft(parseNoteDocument(selectedGraphNode, t("note.untitled")));
+      setWorkspaceView("note");
       return;
     }
 
@@ -499,10 +458,6 @@ export default function App() {
 
   const handleGraphNodeSelect = (nodeId: string) => {
     setSelectedNodeId(nodeId);
-  };
-
-  const handleGraphNodeActivate = (nodeId: string) => {
-    setSelectedNodeId(nodeId);
 
     const targetNode = snapshot?.nodes.find((node) => node.id === nodeId);
     if (!targetNode) {
@@ -511,28 +466,18 @@ export default function App() {
 
     if (normalizeGraphNodeType(targetNode.properties) === "note") {
       setNoteDraft(parseNoteDocument(targetNode, t("note.untitled")));
-      setActiveTab("analysis");
       setWorkspaceView("note");
       return;
     }
 
     setFocusedRow(resolveSpreadsheetAnchor(targetNode));
-    setActiveTab("analysis");
     setWorkspaceView("spreadsheet");
   };
 
   const handleNoteCreated = (nodeId: string) => {
     setSelectedNodeId(nodeId);
-    setActiveTab("analysis");
     setWorkspaceView("note");
     setNoteDraft({ title: t("note.untitled"), content: "" });
-  };
-
-  const handleNodeDeleted = (nodeId: string) => {
-    if (selectedNodeId === nodeId) {
-      setSelectedNodeId(null);
-      setWorkspaceView("spreadsheet");
-    }
   };
 
   const saveSelectedNote = async () => {
@@ -584,7 +529,6 @@ export default function App() {
       setFocusedRow(nextPeakRow);
       setPeakIndex(result.index !== undefined ? result.index : undefined);
       setRevision((prev) => prev + 1);
-      setActiveTab("analysis");
       setWorkspaceView("spreadsheet");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -600,13 +544,6 @@ export default function App() {
           <p>{t("app.brand.description")}</p>
         </div>
         <div className="toolbar-actions">
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
-          >
-            {t("common.theme")}: {theme === "dark" ? t("common.themes.dark") : t("common.themes.light")}
-          </button>
           <label className="toolbar-language-select">
             <span>{t("common.language")}</span>
             <select
@@ -647,189 +584,155 @@ export default function App() {
           <MatrixDashboard />
         </aside>
 
-        <section className="app-workspace">
+        <section className="app-main">
           <div className="workspace-header app-surface">
             <div>
-              <p className="eyebrow">
-                {t(activeTab === "analysis" ? "app.mainView.eyebrow" : "app.rightPanel.eyebrow")}
-              </p>
-              <h2>{t(activeTab === "analysis" ? "app.mainView.title" : "app.rightPanel.title")}</h2>
-              <p>
-                {t(
-                  activeTab === "analysis"
-                    ? "app.mainView.description"
-                    : "app.rightPanel.description"
-                )}
-              </p>
+              <p className="eyebrow">{t("app.mainView.eyebrow")}</p>
+              <h2>{t("app.mainView.title")}</h2>
+              <p>{t("app.mainView.description")}</p>
             </div>
-            <div className="workspace-controls">
-              <div className="workspace-tabs">
-                <button
-                  type="button"
-                  className={activeTab === "analysis" ? "primary-button is-active" : "ghost-button"}
-                  onClick={() => setActiveTab("analysis")}
-                >
-                  {t("app.tabs.analysis")}
-                </button>
-                <button
-                  type="button"
-                  className={activeTab === "graph" ? "primary-button is-active" : "ghost-button"}
-                  onClick={() => setActiveTab("graph")}
-                >
-                  {t("app.tabs.graph")}
-                </button>
-              </div>
-              {activeTab === "analysis" && (
-                <div className="view-switcher">
-                  <button
-                    type="button"
-                    className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
-                    onClick={() => setWorkspaceView("spreadsheet")}
-                  >
-                    {t("app.mainView.spreadsheet")}
-                  </button>
-                  <button
-                    type="button"
-                    className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
-                    onClick={() => setWorkspaceView("note")}
-                    disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
-                  >
-                    {t("app.mainView.note")}
-                  </button>
-                </div>
-              )}
+            <div className="view-switcher">
+              <button
+                type="button"
+                className={workspaceView === "spreadsheet" ? "primary-button is-active" : "ghost-button"}
+                onClick={() => setWorkspaceView("spreadsheet")}
+              >
+                {t("app.mainView.spreadsheet")}
+              </button>
+              <button
+                type="button"
+                className={workspaceView === "note" ? "primary-button is-active" : "ghost-button"}
+                onClick={() => setWorkspaceView("note")}
+                disabled={!selectedGraphNode || normalizeGraphNodeType(selectedGraphNode.properties) !== "note"}
+              >
+                {t("app.mainView.note")}
+              </button>
             </div>
           </div>
 
-          {activeTab === "analysis" ? (
-            <div className="workspace-stack">
-              {workspaceView === "spreadsheet" ? (
-                <>
-                  <section className="office-canvas-shell app-surface workbench-panel">
-                    <div className="instrument-summary">
-                      <div>
-                        <strong>{t("app.instrument.currentFormat")}</strong>
-                        <span>{instrumentFormat}</span>
-                      </div>
-                      <div className="metadata-list">
-                        {metadataEntries.length > 0 ? (
-                          metadataEntries.map(([key, value]) => (
-                            <span key={key} className="metadata-chip">
-                              {formatMetadataLabel(key, t)}：{formatMetadataValue(value, t("common.na"))}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="metadata-chip">{t("app.instrument.noMetadata")}</span>
-                        )}
-                      </div>
-                    </div>
-                    <SpreadsheetGrid
-                      data={spreadsheetData}
-                      themeName={theme}
-                      revision={revision}
-                      peakRow={peakRow}
-                      focusRow={focusedRow}
-                      focusCol={1}
-                    />
-                  </section>
-                  <section className="chart-shell app-surface workbench-panel">
-                    <div className="panel-heading compact-panel-heading">
-                      <div>
-                        <p className="eyebrow">{t("app.chart.eyebrow")}</p>
-                        <h3>{t("app.chart.title")}</h3>
-                        <p>{t("app.chart.description")}</p>
-                      </div>
-                      {chartData.length > 0 && typeof peakIndex === "number" && (
-                        <button
-                          className="primary-button"
-                          onClick={async () => {
-                            if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
-                              return;
-                            }
-
-                            const { x: voltage, y: current } = chartData[peakIndex];
-                            setError(null);
-                            try {
-                              await invoke("commit_agent_analysis", {
-                                peakIndex,
-                                voltage,
-                                current
-                              });
-                              await fetchState();
-                            } catch (err) {
-                              setError(err instanceof Error ? err.message : String(err));
-                            }
-                          }}
-                        >
-                          {t("app.chart.commit")}
-                        </button>
-                      )}
-                    </div>
-                    <ScientificChart
-                      data={chartData}
-                      instrumentFormat={instrumentFormat}
-                      peakIndex={peakIndex}
-                      themeName={theme}
-                      width={960}
-                      height={360}
-                    />
-                  </section>
-                </>
-              ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
-                <NoteEditor
-                  title={noteDraft.title}
-                  content={noteDraft.content}
-                  saving={noteSaving}
-                  onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
-                  onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
-                  onSave={saveSelectedNote}
-                  onClose={() => setWorkspaceView("spreadsheet")}
+          {workspaceView === "spreadsheet" ? (
+            <>
+              <section className="office-canvas-shell app-surface workbench-panel">
+                <div className="instrument-summary">
+                  <div>
+                    <strong>{t("app.instrument.currentFormat")}</strong>
+                    <span>{instrumentFormat}</span>
+                  </div>
+                  <div className="metadata-list">
+                    {metadataEntries.length > 0 ? (
+                      metadataEntries.map(([key, value]) => (
+                        <span key={key} className="metadata-chip">
+                          {formatMetadataLabel(key, t)}：{formatMetadataValue(value === null || value === undefined ? t("common.na") : value)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="metadata-chip">{t("app.instrument.noMetadata")}</span>
+                    )}
+                  </div>
+                </div>
+                <SpreadsheetGrid
+                  data={spreadsheetData}
+                  revision={revision}
+                  peakRow={peakRow}
+                  focusRow={focusedRow}
+                  focusCol={1}
                 />
-              ) : (
-                <section className="note-empty-state app-surface">
-                  <h3>{t("app.noteEmpty.title")}</h3>
-                  <p>{t("app.noteEmpty.description")}</p>
-                </section>
-              )}
-            </div>
-          ) : snapshot ? (
-            <section className="app-surface graph-workspace-panel">
-              <div className="graph-panel-header">
-                <div>
-                  <p className="eyebrow">{t("app.rightPanel.eyebrow")}</p>
-                  <h2>{t("app.rightPanel.title")}</h2>
-                  <p>{t("app.rightPanel.description")}</p>
+              </section>
+              <section className="chart-shell app-surface workbench-panel">
+                <div className="panel-heading compact-panel-heading">
+                  <div>
+                    <p className="eyebrow">{t("app.chart.eyebrow")}</p>
+                    <h3>{t("app.chart.title")}</h3>
+                    <p>{t("app.chart.description")}</p>
+                  </div>
+                  {chartData.length > 0 && typeof peakIndex === "number" && (
+                    <button
+                      className="primary-button"
+                      onClick={async () => {
+                        if (typeof peakIndex !== "number" || !chartData[peakIndex]) {
+                          return;
+                        }
+
+                        const { x: voltage, y: current } = chartData[peakIndex];
+                        setError(null);
+                        try {
+                          await invoke("commit_agent_analysis", {
+                            peakIndex,
+                            voltage,
+                            current
+                          });
+                          await fetchState();
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : String(err));
+                        }
+                      }}
+                    >
+                      {t("app.chart.commit")}
+                    </button>
+                  )}
                 </div>
-                <div className="graph-stats">
-                  <span>{t("app.graphStats.nodes", { count: graphNodes.length })}</span>
-                  <span>{t("app.graphStats.edges", { count: graphEdges.length })}</span>
-                  <span>{t("app.graphStats.operations", { count: snapshot.op_count })}</span>
-                </div>
-              </div>
-              <StarGraph
-                nodes={graphNodes}
-                edges={graphEdges}
-                themeName={theme}
-                selectedNodeId={selectedNodeId}
-                onNodeSelect={handleGraphNodeSelect}
-                onNodeActivate={handleGraphNodeActivate}
-                onNoteCreated={handleNoteCreated}
-                onNodeDeleted={handleNodeDeleted}
-                onGraphChanged={async () => {
-                  await fetchState();
-                }}
-                onError={(message) => setError(message)}
-              />
-            </section>
+                <ScientificChart
+                  data={chartData}
+                  instrumentFormat={instrumentFormat}
+                  peakIndex={peakIndex}
+                  width={960}
+                  height={360}
+                />
+              </section>
+            </>
+          ) : selectedGraphNode && normalizeGraphNodeType(selectedGraphNode.properties) === "note" ? (
+            <NoteEditor
+              title={noteDraft.title}
+              content={noteDraft.content}
+              saving={noteSaving}
+              onTitleChange={(value) => setNoteDraft((prev) => ({ ...prev, title: value }))}
+              onContentChange={(value) => setNoteDraft((prev) => ({ ...prev, content: value }))}
+              onSave={saveSelectedNote}
+              onClose={() => setWorkspaceView("spreadsheet")}
+            />
           ) : (
-            <section className="note-empty-state app-surface graph-empty-state">
-              <h3>{t("app.graphEmpty.title")}</h3>
-              <p>{t("app.graphEmpty.description")}</p>
+            <section className="note-empty-state app-surface">
+              <h3>{t("app.noteEmpty.title")}</h3>
+              <p>{t("app.noteEmpty.description")}</p>
             </section>
           )}
 
           {error && <pre className="error">{error}</pre>}
         </section>
+
+        <aside className="app-right-panel app-surface">
+          <div className="graph-panel-header">
+            <div>
+              <p className="eyebrow">{t("app.rightPanel.eyebrow")}</p>
+              <h2>{t("app.rightPanel.title")}</h2>
+              <p>{t("app.rightPanel.description")}</p>
+            </div>
+            {snapshot && (
+              <div className="graph-stats">
+                <span>{t("app.graphStats.nodes", { count: graphNodes.length })}</span>
+                <span>{t("app.graphStats.edges", { count: graphEdges.length })}</span>
+                <span>{t("app.graphStats.operations", { count: snapshot.op_count })}</span>
+              </div>
+            )}
+          </div>
+          {snapshot ? (
+            <StarGraph
+              nodes={graphNodes}
+              edges={graphEdges}
+              onNodeSelect={handleGraphNodeSelect}
+              onNoteCreated={handleNoteCreated}
+              onGraphChanged={async () => {
+                await fetchState();
+              }}
+              onError={(message) => setError(message)}
+            />
+          ) : (
+            <section className="note-empty-state graph-empty-state">
+              <h3>{t("app.graphEmpty.title")}</h3>
+              <p>{t("app.graphEmpty.description")}</p>
+            </section>
+          )}
+        </aside>
       </div>
     </main>
   );

@@ -1,67 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent
-} from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useTranslation } from "../i18n";
-
-type StarGraphPalette = {
-  fill: string;
-  stroke: string;
-  glow: string;
-};
-
-type StarGraphTheme = {
-  bgStart: string;
-  bgMid: string;
-  bgEnd: string;
-  edge: string;
-  edgeLabelBg: string;
-  edgeLabelText: string;
-  linkPreview: string;
-  tooltipBg: string;
-  tooltipBorder: string;
-  tooltipTitle: string;
-  tooltipText: string;
-  starBaseRgb: string;
-  nodePalettes: Record<string, StarGraphPalette>;
-};
-
-function readStarGraphTheme(): StarGraphTheme {
-  const styles = getComputedStyle(document.documentElement);
-  const palette = (prefix: string): StarGraphPalette => ({
-    fill: styles.getPropertyValue(`--${prefix}-fill`).trim(),
-    stroke: styles.getPropertyValue(`--${prefix}-stroke`).trim(),
-    glow: styles.getPropertyValue(`--${prefix}-glow`).trim()
-  });
-
-  return {
-    bgStart: styles.getPropertyValue("--canvas-graph-bg-start").trim(),
-    bgMid: styles.getPropertyValue("--canvas-graph-bg-mid").trim(),
-    bgEnd: styles.getPropertyValue("--canvas-graph-bg-end").trim(),
-    edge: styles.getPropertyValue("--canvas-graph-edge").trim(),
-    edgeLabelBg: styles.getPropertyValue("--canvas-graph-edge-label-bg").trim(),
-    edgeLabelText: styles.getPropertyValue("--canvas-graph-edge-label-text").trim(),
-    linkPreview: styles.getPropertyValue("--canvas-graph-link-preview").trim(),
-    tooltipBg: styles.getPropertyValue("--canvas-graph-tooltip-bg").trim(),
-    tooltipBorder: styles.getPropertyValue("--canvas-graph-tooltip-border").trim(),
-    tooltipTitle: styles.getPropertyValue("--canvas-graph-tooltip-title").trim(),
-    tooltipText: styles.getPropertyValue("--canvas-graph-tooltip-text").trim(),
-    starBaseRgb: styles.getPropertyValue("--canvas-graph-star-rgb").trim(),
-    nodePalettes: {
-      agent_analysis: palette("graph-node-agent"),
-      note: palette("graph-node-note"),
-      cv: palette("graph-node-cv"),
-      xrd: palette("graph-node-xrd"),
-      instrument_data: palette("graph-node-instrument"),
-      default: palette("graph-node-default")
-    }
-  };
-}
 
 export type StarGraphNode = {
   id: string;
@@ -79,12 +18,8 @@ type StarGraphProps = {
   nodes: StarGraphNode[];
   edges: StarGraphEdge[];
   height?: number;
-  themeName?: string;
-  selectedNodeId?: string | null;
   onNodeSelect?: (nodeId: string) => void;
-  onNodeActivate?: (nodeId: string) => void;
   onNoteCreated?: (nodeId: string) => void;
-  onNodeDeleted?: (nodeId: string) => void;
   onGraphChanged?: () => void | Promise<void>;
   onError?: (message: string) => void;
 };
@@ -140,8 +75,21 @@ function seededUnit(seed: number): number {
   return (seed % 10000) / 10000;
 }
 
-function getNodeColor(type: string, theme: StarGraphTheme): StarGraphPalette {
-  return theme.nodePalettes[type] ?? theme.nodePalettes.default;
+function getNodeColor(type: string): { fill: string; stroke: string; glow: string } {
+  switch (type) {
+    case "agent_analysis":
+      return { fill: "#ffb84d", stroke: "#ff7a00", glow: "rgba(255, 122, 0, 0.28)" };
+    case "note":
+      return { fill: "#f5d0fe", stroke: "#a21caf", glow: "rgba(162, 28, 175, 0.24)" };
+    case "cv":
+      return { fill: "#6ee7b7", stroke: "#0f766e", glow: "rgba(16, 185, 129, 0.25)" };
+    case "xrd":
+      return { fill: "#93c5fd", stroke: "#1d4ed8", glow: "rgba(37, 99, 235, 0.24)" };
+    case "instrument_data":
+      return { fill: "#a7f3d0", stroke: "#047857", glow: "rgba(5, 150, 105, 0.24)" };
+    default:
+      return { fill: "#d8b4fe", stroke: "#7c3aed", glow: "rgba(124, 58, 237, 0.22)" };
+  }
 }
 
 function measureViewport(element: HTMLDivElement | null, fallbackHeight: number): ViewportSize {
@@ -202,7 +150,10 @@ function findNodeAtPosition(
 ) {
   return [...nodes]
     .reverse()
-    .find((node) => node.id !== excludeId && Math.hypot(pointerX - node.x, pointerY - node.y) <= node.radius);
+    .find(
+      (node) =>
+        node.id !== excludeId && Math.hypot(pointerX - node.x, pointerY - node.y) <= node.radius + 6
+    );
 }
 
 function drawArrow(
@@ -242,8 +193,7 @@ function drawTooltip(
   context: CanvasRenderingContext2D,
   node: SimNode,
   viewport: ViewportSize,
-  subtitle: string,
-  theme: StarGraphTheme
+  subtitle: string
 ) {
   const title = node.label;
   const paddingX = 14;
@@ -277,20 +227,20 @@ function drawTooltip(
     tooltipY = 12;
   }
 
-  context.fillStyle = theme.tooltipBg;
+  context.fillStyle = "rgba(9, 14, 24, 0.9)";
   context.beginPath();
   context.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 12);
   context.fill();
 
-  context.strokeStyle = theme.tooltipBorder;
+  context.strokeStyle = "rgba(148, 163, 184, 0.35)";
   context.lineWidth = 1;
   context.stroke();
 
-  context.fillStyle = theme.tooltipTitle;
+  context.fillStyle = "#f8fafc";
   context.font = "600 14px Arial, sans-serif";
   context.fillText(title, tooltipX + paddingX, tooltipY + paddingY);
 
-  context.fillStyle = theme.tooltipText;
+  context.fillStyle = "rgba(226, 232, 240, 0.9)";
   context.font = "12px Arial, sans-serif";
   context.fillText(subtitle, tooltipX + paddingX, tooltipY + paddingY + 14 + lineGap);
   context.restore();
@@ -300,12 +250,8 @@ export function StarGraph({
   nodes,
   edges,
   height = DEFAULT_HEIGHT,
-  themeName,
-  selectedNodeId,
   onNodeSelect,
-  onNodeActivate,
   onNoteCreated,
-  onNodeDeleted,
   onGraphChanged,
   onError
 }: StarGraphProps) {
@@ -318,7 +264,6 @@ export function StarGraph({
   const linkRef = useRef<LinkState | null>(null);
   const hoveredNodeId = useRef<string | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const deletingNodeIdRef = useRef<string | null>(null);
   const [viewport, setViewport] = useState<ViewportSize>({ width: 320, height });
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [linkingNodeId, setLinkingNodeId] = useState<string | null>(null);
@@ -373,7 +318,6 @@ export function StarGraph({
 
     let disposed = false;
     let lastTimestamp = 0;
-    const theme = readStarGraphTheme();
 
     const renderFrame = (timestamp: number) => {
       if (disposed) {
@@ -491,9 +435,9 @@ export function StarGraph({
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const background = context.createLinearGradient(0, 0, currentViewport.width, currentViewport.height);
-      background.addColorStop(0, theme.bgStart);
-      background.addColorStop(0.55, theme.bgMid);
-      background.addColorStop(1, theme.bgEnd);
+      background.addColorStop(0, "#07111f");
+      background.addColorStop(0.55, "#0d1b31");
+      background.addColorStop(1, "#132847");
       context.fillStyle = background;
       context.fillRect(0, 0, currentViewport.width, currentViewport.height);
 
@@ -503,14 +447,14 @@ export function StarGraph({
         const y = seededUnit(seed >>> 2) * currentViewport.height;
         const size = 0.8 + seededUnit(seed >>> 4) * 1.9;
         context.beginPath();
-        context.fillStyle = `rgba(${theme.starBaseRgb}, ${0.18 + seededUnit(seed >>> 5) * 0.45})`;
+        context.fillStyle = `rgba(255, 255, 255, ${0.18 + seededUnit(seed >>> 5) * 0.45})`;
         context.arc(x, y, size, 0, Math.PI * 2);
         context.fill();
       }
 
       context.lineWidth = 1.4;
-      context.strokeStyle = theme.edge;
-      context.fillStyle = theme.edgeLabelText;
+      context.strokeStyle = "rgba(148, 163, 184, 0.42)";
+      context.fillStyle = "rgba(191, 219, 254, 0.9)";
       context.font = "12px 'Segoe UI', sans-serif";
 
       for (const edge of simEdges) {
@@ -531,12 +475,12 @@ export function StarGraph({
           const midY = (source.y + target.y) / 2;
           const labelWidth = Math.min(Math.max(context.measureText(edge.label).width + 12, 36), 120);
 
-          context.fillStyle = theme.edgeLabelBg;
+          context.fillStyle = "rgba(8, 15, 29, 0.8)";
           context.beginPath();
           context.roundRect(midX - labelWidth / 2, midY - 11, labelWidth, 22, 11);
           context.fill();
 
-          context.fillStyle = theme.edgeLabelText;
+          context.fillStyle = "#cbd5e1";
           context.textAlign = "center";
           context.textBaseline = "middle";
           context.fillText(edge.label, midX, midY + 0.5, labelWidth - 10);
@@ -547,7 +491,7 @@ export function StarGraph({
         const sourceNode = nodeById.get(linkState.sourceNodeId);
         if (sourceNode) {
           context.save();
-          context.strokeStyle = theme.linkPreview;
+          context.strokeStyle = "rgba(250, 204, 21, 0.95)";
           context.lineWidth = 2.5;
           context.setLineDash([9, 6]);
           context.beginPath();
@@ -562,20 +506,19 @@ export function StarGraph({
       context.textBaseline = "middle";
 
       for (const node of simNodes) {
-        const palette = getNodeColor(node.type, theme);
+        const palette = getNodeColor(node.type);
         const isHovered = hoveredNodeId.current === node.id;
-        const isSelected = selectedNodeId === node.id;
 
         context.beginPath();
         context.fillStyle = palette.glow;
-        context.arc(node.x, node.y, node.radius + (isHovered || isSelected ? 13 : 9), 0, Math.PI * 2);
+        context.arc(node.x, node.y, node.radius + (isHovered ? 13 : 9), 0, Math.PI * 2);
         context.fill();
 
         context.beginPath();
         context.fillStyle = palette.fill;
         context.strokeStyle = palette.stroke;
         context.lineWidth =
-          draggingNodeId === node.id || linkingNodeId === node.id || isHovered || isSelected ? 3 : 2;
+          draggingNodeId === node.id || linkingNodeId === node.id || isHovered ? 3 : 2;
         context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         context.fill();
         context.stroke();
@@ -584,7 +527,7 @@ export function StarGraph({
       if (hoveredNodeId.current) {
         const hoveredNode = nodeById.get(hoveredNodeId.current);
         if (hoveredNode) {
-          const palette = getNodeColor(hoveredNode.type, theme);
+          const palette = getNodeColor(hoveredNode.type);
           const translatedType = t(`graph.nodeTypes.${hoveredNode.type}`) === `graph.nodeTypes.${hoveredNode.type}`
             ? t("graph.nodeTypes.unknown")
             : t(`graph.nodeTypes.${hoveredNode.type}`);
@@ -601,8 +544,7 @@ export function StarGraph({
             context,
             hoveredNode,
             currentViewport,
-            t("graph.tooltipType", { type: translatedType }),
-            theme
+            t("graph.tooltipType", { type: translatedType })
           );
         }
       }
@@ -618,38 +560,7 @@ export function StarGraph({
         window.cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [draggingNodeId, linkingNodeId, selectedNodeId, themeName, viewport, t]);
-
-  const createNoteNode = () => {
-    void (async () => {
-      try {
-        const nodeId = await invoke<string>("create_note_node");
-        onNoteCreated?.(nodeId);
-        await notifyGraphChanged();
-      } catch (error) {
-        reportError(error);
-      }
-    })();
-  };
-
-  const deleteNode = (nodeId: string) => {
-    if (deletingNodeIdRef.current === nodeId) {
-      return;
-    }
-
-    deletingNodeIdRef.current = nodeId;
-    void (async () => {
-      try {
-        await invoke("delete_node", { nodeId });
-        onNodeDeleted?.(nodeId);
-        await notifyGraphChanged();
-      } catch (error) {
-        reportError(error);
-      } finally {
-        deletingNodeIdRef.current = null;
-      }
-    })();
-  };
+  }, [draggingNodeId, linkingNodeId, viewport, t]);
 
   const handlePointerDown = (event: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -660,13 +571,9 @@ export function StarGraph({
     const pointer = getPointerPosition(event, canvas);
     const targetNode = findNodeAtPosition(pointer.x, pointer.y, nodesRef.current);
 
-    canvas.focus();
-
     if (!targetNode) {
       return;
     }
-
-    onNodeSelect?.(targetNode.id);
 
     if (event.altKey) {
       linkRef.current = {
@@ -777,22 +684,20 @@ export function StarGraph({
     const targetNode = findNodeAtPosition(pointer.x, pointer.y, nodesRef.current);
 
     if (targetNode) {
-      onNodeActivate?.(targetNode.id);
-    }
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLCanvasElement>) => {
-    if (event.key !== "Delete" && event.key !== "Backspace") {
+      onNodeSelect?.(targetNode.id);
       return;
     }
 
-    const candidateNodeId = hoveredNodeId.current ?? selectedNodeId ?? null;
-    if (!candidateNodeId) {
-      return;
-    }
-
-    event.preventDefault();
-    deleteNode(candidateNodeId);
+    void (async () => {
+      try {
+        const nodeId = await invoke<string>("create_note_node");
+        onNoteCreated?.(nodeId);
+        onNodeSelect?.(nodeId);
+        await notifyGraphChanged();
+      } catch (error) {
+        reportError(error);
+      }
+    })();
   };
 
   return (
@@ -802,31 +707,16 @@ export function StarGraph({
           <h3>{t("graph.title")}</h3>
           <p>{t("graph.instructions")}</p>
         </div>
-        <div className="star-graph-controls">
-          <span className="star-graph-badge">{nodeCountLabel}</span>
-          <button type="button" className="secondary-button" onClick={createNoteNode}>
-            {t("graph.actions.createNote")}
-          </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => selectedNodeId && deleteNode(selectedNodeId)}
-            disabled={!selectedNodeId}
-          >
-            {t("graph.actions.deleteNode")}
-          </button>
-        </div>
+        <span className="star-graph-badge">{nodeCountLabel}</span>
       </div>
       <canvas
         ref={canvasRef}
         className="star-graph-canvas"
-        tabIndex={0}
         onMouseDown={handlePointerDown}
         onMouseMove={handlePointerMove}
         onMouseUp={(event) => releaseDrag(event)}
         onMouseLeave={handlePointerLeave}
         onDoubleClick={handleDoubleClick}
-        onKeyDown={handleKeyDown}
         style={{ cursor: draggingNodeId ? "grabbing" : linkingNodeId ? "crosshair" : "grab" }}
       />
     </div>

@@ -47,7 +47,6 @@ type SpreadsheetGridProps = {
   cellHeight?: number;
   viewportWidth?: number;
   viewportHeight?: number;
-  themeName?: string;
   revision?: number;
   peakRow?: number | null;
   focusRow?: number | null;
@@ -266,7 +265,6 @@ export default function SpreadsheetGrid({
   cellHeight = 28,
   viewportWidth = 620,
   viewportHeight = 308,
-  themeName,
   revision = 0,
   peakRow = null,
   focusRow = null,
@@ -351,7 +349,7 @@ export default function SpreadsheetGrid({
   useEffect(() => {
     dataRef.current = data;
     drawCurrentGrid();
-  }, [data, cellWidth, cellHeight, peakRow, themeName, t]);
+  }, [data, cellWidth, cellHeight, peakRow, t]);
 
   useEffect(() => {
     if (!focusRow || !focusCol) {
@@ -366,11 +364,11 @@ export default function SpreadsheetGrid({
       viewport.scrollTo({ left: targetLeft, top: targetTop, behavior: "smooth" });
     }
     drawCurrentGrid();
-  }, [focusRow, focusCol, cellWidth, cellHeight, revision, peakRow, themeName, t]);
+  }, [focusRow, focusCol, cellWidth, cellHeight, revision, peakRow, t]);
 
   useEffect(() => {
     drawCurrentGrid();
-  }, [revision, themeName, t]);
+  }, [revision, t]);
 
   function getCanvasPosition(event: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;

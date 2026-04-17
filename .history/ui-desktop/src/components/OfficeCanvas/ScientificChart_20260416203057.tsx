@@ -29,7 +29,6 @@ export interface ScientificChartProps {
   data: { x: number; y: number }[];
   peakIndex?: number;
   instrumentFormat?: string;
-  themeName?: string;
   width: number;
   height: number;
 }
@@ -179,7 +178,6 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
   data,
   peakIndex,
   instrumentFormat,
-  themeName,
   width,
   height,
 }) => {
@@ -197,7 +195,7 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
     if (ctx) {
       drawChart(ctx, data, peakIndex, instrumentFormat, t, theme, canvas.width, canvas.height, dpr);
     }
-  }, [data, peakIndex, instrumentFormat, themeName, width, height, t]);
+  }, [data, peakIndex, instrumentFormat, width, height, t]);
 
   return <canvas ref={canvasRef} />;
 };

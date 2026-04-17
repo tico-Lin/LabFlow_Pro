@@ -1,12 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent
-} from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useTranslation } from "../i18n";
 
 type StarGraphPalette = {
@@ -79,12 +72,8 @@ type StarGraphProps = {
   nodes: StarGraphNode[];
   edges: StarGraphEdge[];
   height?: number;
-  themeName?: string;
-  selectedNodeId?: string | null;
   onNodeSelect?: (nodeId: string) => void;
-  onNodeActivate?: (nodeId: string) => void;
   onNoteCreated?: (nodeId: string) => void;
-  onNodeDeleted?: (nodeId: string) => void;
   onGraphChanged?: () => void | Promise<void>;
   onError?: (message: string) => void;
 };
@@ -202,7 +191,10 @@ function findNodeAtPosition(
 ) {
   return [...nodes]
     .reverse()
-    .find((node) => node.id !== excludeId && Math.hypot(pointerX - node.x, pointerY - node.y) <= node.radius);
+    .find(
+      (node) =>
+        node.id !== excludeId && Math.hypot(pointerX - node.x, pointerY - node.y) <= node.radius + 6
+    );
 }
 
 function drawArrow(
@@ -300,12 +292,8 @@ export function StarGraph({
   nodes,
   edges,
   height = DEFAULT_HEIGHT,
-  themeName,
-  selectedNodeId,
   onNodeSelect,
-  onNodeActivate,
   onNoteCreated,
-  onNodeDeleted,
   onGraphChanged,
   onError
 }: StarGraphProps) {
@@ -318,7 +306,6 @@ export function StarGraph({
   const linkRef = useRef<LinkState | null>(null);
   const hoveredNodeId = useRef<string | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const deletingNodeIdRef = useRef<string | null>(null);
   const [viewport, setViewport] = useState<ViewportSize>({ width: 320, height });
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [linkingNodeId, setLinkingNodeId] = useState<string | null>(null);
@@ -564,18 +551,17 @@ export function StarGraph({
       for (const node of simNodes) {
         const palette = getNodeColor(node.type, theme);
         const isHovered = hoveredNodeId.current === node.id;
-        const isSelected = selectedNodeId === node.id;
 
         context.beginPath();
         context.fillStyle = palette.glow;
-        context.arc(node.x, node.y, node.radius + (isHovered || isSelected ? 13 : 9), 0, Math.PI * 2);
+        context.arc(node.x, node.y, node.radius + (isHovered ? 13 : 9), 0, Math.PI * 2);
         context.fill();
 
         context.beginPath();
         context.fillStyle = palette.fill;
         context.strokeStyle = palette.stroke;
         context.lineWidth =
-          draggingNodeId === node.id || linkingNodeId === node.id || isHovered || isSelected ? 3 : 2;
+          draggingNodeId === node.id || linkingNodeId === node.id || isHovered ? 3 : 2;
         context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         context.fill();
         context.stroke();
@@ -618,38 +604,7 @@ export function StarGraph({
         window.cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [draggingNodeId, linkingNodeId, selectedNodeId, themeName, viewport, t]);
-
-  const createNoteNode = () => {
-    void (async () => {
-      try {
-        const nodeId = await invoke<string>("create_note_node");
-        onNoteCreated?.(nodeId);
-        await notifyGraphChanged();
-      } catch (error) {
-        reportError(error);
-      }
-    })();
-  };
-
-  const deleteNode = (nodeId: string) => {
-    if (deletingNodeIdRef.current === nodeId) {
-      return;
-    }
-
-    deletingNodeIdRef.current = nodeId;
-    void (async () => {
-      try {
-        await invoke("delete_node", { nodeId });
-        onNodeDeleted?.(nodeId);
-        await notifyGraphChanged();
-      } catch (error) {
-        reportError(error);
-      } finally {
-        deletingNodeIdRef.current = null;
-      }
-    })();
-  };
+  }, [draggingNodeId, linkingNodeId, viewport, t]);
 
   const handlePointerDown = (event: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -660,13 +615,9 @@ export function StarGraph({
     const pointer = getPointerPosition(event, canvas);
     const targetNode = findNodeAtPosition(pointer.x, pointer.y, nodesRef.current);
 
-    canvas.focus();
-
     if (!targetNode) {
       return;
     }
-
-    onNodeSelect?.(targetNode.id);
 
     if (event.altKey) {
       linkRef.current = {
@@ -777,22 +728,20 @@ export function StarGraph({
     const targetNode = findNodeAtPosition(pointer.x, pointer.y, nodesRef.current);
 
     if (targetNode) {
-      onNodeActivate?.(targetNode.id);
-    }
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLCanvasElement>) => {
-    if (event.key !== "Delete" && event.key !== "Backspace") {
+      onNodeSelect?.(targetNode.id);
       return;
     }
 
-    const candidateNodeId = hoveredNodeId.current ?? selectedNodeId ?? null;
-    if (!candidateNodeId) {
-      return;
-    }
-
-    event.preventDefault();
-    deleteNode(candidateNodeId);
+    void (async () => {
+      try {
+        const nodeId = await invoke<string>("create_note_node");
+        onNoteCreated?.(nodeId);
+        onNodeSelect?.(nodeId);
+        await notifyGraphChanged();
+      } catch (error) {
+        reportError(error);
+      }
+    })();
   };
 
   return (
@@ -802,31 +751,16 @@ export function StarGraph({
           <h3>{t("graph.title")}</h3>
           <p>{t("graph.instructions")}</p>
         </div>
-        <div className="star-graph-controls">
-          <span className="star-graph-badge">{nodeCountLabel}</span>
-          <button type="button" className="secondary-button" onClick={createNoteNode}>
-            {t("graph.actions.createNote")}
-          </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => selectedNodeId && deleteNode(selectedNodeId)}
-            disabled={!selectedNodeId}
-          >
-            {t("graph.actions.deleteNode")}
-          </button>
-        </div>
+        <span className="star-graph-badge">{nodeCountLabel}</span>
       </div>
       <canvas
         ref={canvasRef}
         className="star-graph-canvas"
-        tabIndex={0}
         onMouseDown={handlePointerDown}
         onMouseMove={handlePointerMove}
         onMouseUp={(event) => releaseDrag(event)}
         onMouseLeave={handlePointerLeave}
         onDoubleClick={handleDoubleClick}
-        onKeyDown={handleKeyDown}
         style={{ cursor: draggingNodeId ? "grabbing" : linkingNodeId ? "crosshair" : "grab" }}
       />
     </div>
