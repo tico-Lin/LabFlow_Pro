@@ -20,6 +20,11 @@ const en = {
       title: "Professional Scientific Workspace",
       description: "A dark operations dashboard that unifies data ingestion, peak analysis, spreadsheet workflows, and star-graph reasoning."
     },
+    navigation: {
+      dashboard: "Dashboard",
+      workbench: "Workbench",
+      graphView: "Graph View"
+    },
     toolbar: {
       import: "Import Experimental Data",
       importing: "Importing...",
@@ -73,6 +78,34 @@ const en = {
       title: "Star graph not loaded",
       description: "After sync, the relationship network converted from the CRDT snapshot will appear here."
     }
+  },
+  dashboard: {
+    eyebrow: "Data Hub",
+    title: "Experimental Data Hub",
+    description: "Incoming graph nodes are rendered as traditional data cards so the team can scan datasets before entering analysis.",
+    cardCount: "Data Cards",
+    liveFeed: "Live Feed",
+    liveConnected: "Listening",
+    liveIdle: "Idle",
+    emptyTitle: "No data cards yet",
+    emptyDescription: "Import experimental data to populate the dashboard and route each dataset into the workbench."
+  },
+  workbench: {
+    eyebrow: "Analysis Workbench",
+    title: "Spreadsheet and Scientific Chart",
+    description: "Focus on one dataset at a time with a dedicated spreadsheet surface and analysis chart.",
+    currentDataset: "Current dataset:",
+    noDataset: "No dataset selected",
+    openGraph: "View in Star Graph"
+  },
+  graphView: {
+    eyebrow: "Knowledge Star Map",
+    title: "Full-Screen Graph Workspace",
+    description: "Navigate the knowledge graph in a dedicated full-screen canvas while keeping note editing close at hand.",
+    selectionEyebrow: "Selection",
+    selectionTitle: "Select a node",
+    selectionDescription: "Choose a note to edit it here, or open a data node in the workbench.",
+    openWorkbench: "Open in Workbench"
   },
   errors: {
     noPlotData: "The Rust payload does not contain plottable x / y data",

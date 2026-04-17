@@ -20,6 +20,11 @@ const zhTW = {
       title: "專業科學工作台",
       description: "以深色儀表板整合資料匯入、峰值分析、試算表工作流與星圖推理。"
     },
+    navigation: {
+      dashboard: "數據中樞",
+      workbench: "分析工作台",
+      graphView: "知識星圖"
+    },
     toolbar: {
       import: "匯入實驗數據",
       importing: "匯入中...",
@@ -73,6 +78,34 @@ const zhTW = {
       title: "尚未載入星圖",
       description: "同步後將在此顯示 CRDT snapshot 轉換出的關聯網路。"
     }
+  },
+  dashboard: {
+    eyebrow: "Data Hub",
+    title: "實驗資料中樞",
+    description: "將進入圖譜的節點整理成傳統資料卡，先快速掃描資料，再進入分析工作台。",
+    cardCount: "資料卡數量",
+    liveFeed: "即時事件",
+    liveConnected: "監聽中",
+    liveIdle: "待命",
+    emptyTitle: "目前沒有資料卡",
+    emptyDescription: "請先匯入實驗數據，Dashboard 會自動建立可點擊的資料卡。"
+  },
+  workbench: {
+    eyebrow: "分析工作台",
+    title: "試算表與科學圖表",
+    description: "一次只處理一筆資料，讓試算表與圖表不再與其他視圖競爭空間。",
+    currentDataset: "目前資料集：",
+    noDataset: "尚未選取資料",
+    openGraph: "在星圖中查看"
+  },
+  graphView: {
+    eyebrow: "Knowledge Star Map",
+    title: "全螢幕圖譜工作區",
+    description: "以獨立的全螢幕星圖進行知識導覽，右側保留筆記編輯與節點摘要。",
+    selectionEyebrow: "目前選取",
+    selectionTitle: "請選取節點",
+    selectionDescription: "選取筆記即可直接編輯；選取資料節點可切回分析工作台。",
+    openWorkbench: "在工作台開啟"
   },
   errors: {
     noPlotData: "Rust payload 沒有可繪製的 x / y 數據",
