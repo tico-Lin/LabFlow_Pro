@@ -19,6 +19,18 @@ type AnalysisResultState = {
   pointCount: number | null;
 };
 
+function isChartPointArray(value: unknown): value is ChartPoint[] {
+  return Array.isArray(value) && value.every((point) => {
+    if (!point || typeof point !== "object") {
+      return false;
+    }
+
+    const candidate = point as { x?: unknown; y?: unknown };
+    return typeof candidate.x === "number" && Number.isFinite(candidate.x)
+      && typeof candidate.y === "number" && Number.isFinite(candidate.y);
+  });
+}
+
 function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
   if (!value || typeof value !== "object") {
     return null;

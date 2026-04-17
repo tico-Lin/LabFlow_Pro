@@ -25,26 +25,19 @@ def find_max_peak(voltages: list[float], currents: list[float]) -> dict:
     }
 
 
-def _load_json(payload: str) -> dict | list:
+def _load_json(payload: str) -> dict:
     if not payload:
         return {}
 
     loaded = json.loads(payload)
     if loaded is None:
         return {}
-    if not isinstance(loaded, (dict, list)):
-        raise ValueError("payload 必須是 JSON object 或 list")
+    if not isinstance(loaded, dict):
+        raise ValueError("payload 必須是 JSON object")
     return loaded
 
 
-def _extract_series(data_payload: dict | list) -> tuple[list[float], list[float]]:
-    if isinstance(data_payload, list):
-        voltages = [float(point["x"]) for point in data_payload if isinstance(point, dict) and "x" in point]
-        currents = [float(point["y"]) for point in data_payload if isinstance(point, dict) and "y" in point]
-        if len(voltages) != len(currents):
-            raise ValueError("chart point list 必須同時包含 x 與 y")
-        return voltages, currents
-
+def _extract_series(data_payload: dict) -> tuple[list[float], list[float]]:
     nested_data = data_payload.get("data")
     source = nested_data if isinstance(nested_data, dict) else data_payload
 

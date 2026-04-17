@@ -14,10 +14,18 @@ import { useTranslation } from "../i18n";
 
 type AnalysisModuleFormState = Record<string, string>;
 type ChartPoint = { x: number; y: number };
-type AnalysisResultState = {
-  summary: string;
-  pointCount: number | null;
-};
+
+function isChartPointArray(value: unknown): value is ChartPoint[] {
+  return Array.isArray(value) && value.every((point) => {
+    if (!point || typeof point !== "object") {
+      return false;
+    }
+
+    const candidate = point as { x?: unknown; y?: unknown };
+    return typeof candidate.x === "number" && Number.isFinite(candidate.x)
+      && typeof candidate.y === "number" && Number.isFinite(candidate.y);
+  });
+}
 
 function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
   if (!value || typeof value !== "object") {
@@ -86,7 +94,6 @@ export default function Workbench({
     );
   });
   const [analysisResultData, setAnalysisResultData] = useState<ChartPoint[] | null>(null);
-  const [analysisResultState, setAnalysisResultState] = useState<AnalysisResultState | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
 
@@ -150,13 +157,12 @@ export default function Workbench({
       const parsed = JSON.parse(response) as unknown;
       const nextAnalysisData = parseAnalysisChartData(parsed);
       setAnalysisResultData(nextAnalysisData);
-      setAnalysisResultState({
-        summary: JSON.stringify(parsed),
-        pointCount: nextAnalysisData?.length ?? null
-      });
+
+      if (!nextAnalysisData && !isChartPointArray(parsed)) {
+        setAnalysisError(t("workbench.noDataset"));
+      }
     } catch (error) {
       setAnalysisResultData(null);
-      setAnalysisResultState(null);
       setAnalysisError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunningAnalysis(false);
@@ -166,7 +172,6 @@ export default function Workbench({
   const handleModuleSelect = (moduleId: string) => {
     setSelectedModuleId(moduleId);
     setAnalysisError(null);
-    setAnalysisResultState(null);
 
     const nextModule = analysisModules.find((module) => module.id === moduleId);
     if (!nextModule) {
@@ -304,11 +309,11 @@ export default function Workbench({
               </div>
             ) : null}
 
-            {analysisResultState ? (
+            {analysisResultData?.length ? (
               <div className="analysis-panel-status">
                 <p>{selectedModule?.name}</p>
-                <strong>{analysisResultState.pointCount ?? "-"}</strong>
-                <span>{analysisResultState.pointCount ? t("app.chart.title") : analysisResultState.summary}</span>
+                <strong>{analysisResultData.length}</strong>
+                <span>{t("app.chart.title")}</span>
               </div>
             ) : null}
           </div>
