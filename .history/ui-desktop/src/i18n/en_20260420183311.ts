@@ -207,9 +207,6 @@ const en = {
     catalog: {
       eyebrow: "Library",
       title: "Available Modules",
-      defaultValue: "Default",
-      numberOnlyHint: "Numeric input only. Decimal values are supported.",
-      parameterHint: "If left unchanged, the module runtime will use the default value.",
       description: "This catalog currently uses mocked entries to define layout, metadata structure, and module taxonomy."
     },
     stats: {

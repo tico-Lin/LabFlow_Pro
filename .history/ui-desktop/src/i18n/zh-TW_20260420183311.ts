@@ -207,9 +207,6 @@ const zhTW = {
     catalog: {
       eyebrow: "模組清單",
       title: "可用模組",
-      defaultValue: "預設值",
-      numberOnlyHint: "僅接受數字輸入，可使用小數。",
-      parameterHint: "若維持不變，模組執行時會採用預設值。",
       description: "目前先以 mock 資料定義版面、metadata 結構與模組分類方式。"
     },
     stats: {

@@ -19,8 +19,6 @@ type AnalysisResultState = {
   pointCount: number | null;
 };
 
-const NUMBER_INPUT_PATTERN = /^-?\d*(?:[.,]\d*)?$/u;
-
 function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -261,6 +259,7 @@ export default function Workbench({
               instrumentFormat={instrumentFormat}
               peakIndex={peakIndex}
               themeName={theme}
+              width={960}
               height={360}
             />
           </section>
