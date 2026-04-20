@@ -145,9 +145,6 @@ const en = {
       moduleLabel: "Analysis Module",
       parametersTitle: "Dynamic Parameters",
       parametersDescription: "The parameter form changes with the selected module.",
-      defaultValue: "Default",
-      numberOnlyHint: "Numeric input only. Decimal values are supported.",
-      parameterHint: "If left unchanged, the module runtime will use the default value.",
       noParameters: "This module does not expose editable parameters yet.",
       cancel: "Cancel",
       run: "Run"

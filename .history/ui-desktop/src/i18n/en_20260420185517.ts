@@ -21,7 +21,7 @@ const en = {
       description: "A dark operations dashboard that unifies data ingestion, peak analysis, spreadsheet workflows, and star-graph reasoning."
     },
     navigation: {
-      dashboard: "Home",
+      dashboard: "Dashboard",
       notes: "Notes",
       workbench: "Workbench",
       graphView: "Graph View",
@@ -145,9 +145,6 @@ const en = {
       moduleLabel: "Analysis Module",
       parametersTitle: "Dynamic Parameters",
       parametersDescription: "The parameter form changes with the selected module.",
-      defaultValue: "Default",
-      numberOnlyHint: "Numeric input only. Decimal values are supported.",
-      parameterHint: "If left unchanged, the module runtime will use the default value.",
       noParameters: "This module does not expose editable parameters yet.",
       cancel: "Cancel",
       run: "Run"

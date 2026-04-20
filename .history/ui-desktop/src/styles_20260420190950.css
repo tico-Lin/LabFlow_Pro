@@ -1481,7 +1481,6 @@ select {
 
 .analysis-panel-field-input-row {
   align-items: stretch;
-  flex-wrap: wrap;
 }
 
 .analysis-panel-field-input-row input,
@@ -1493,8 +1492,7 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  max-width: 100%;
+  min-width: fit-content;
   padding: 0.75rem 0.85rem;
   border-radius: 0.85rem;
   border: 1px solid var(--border);
@@ -1502,7 +1500,7 @@ select {
   color: var(--text-chip);
   font-size: 0.86rem;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .analysis-panel-field-meta {
@@ -1753,17 +1751,6 @@ select {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.workbench-panel-flat {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.workbench-panel-flat .instrument-summary {
-  margin-bottom: 0.05rem;
 }
 
 .office-canvas-shell {

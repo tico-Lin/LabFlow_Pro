@@ -403,9 +403,7 @@ export default function App() {
         try {
           if (typeof event.payload === "string") {
             applyInstrumentContent(event.payload, t("common.unknown"));
-            if (preferences.autoSyncGraph) {
-              void fetchState();
-            }
+            void fetchState();
             return;
           }
 
@@ -422,17 +420,13 @@ export default function App() {
             }
 
             applyInstrumentContent(resultPayload, t("common.unknown"));
-            if (preferences.autoSyncGraph) {
-              void fetchState();
-            }
+            void fetchState();
             return;
           }
 
           if (typeof payload?.label === "string") {
             applyInstrumentContent(payload.label, t("common.unknown"));
-            if (preferences.autoSyncGraph) {
-              void fetchState();
-            }
+            void fetchState();
             return;
           }
 
@@ -455,9 +449,7 @@ export default function App() {
             setRevision((prev) => prev + 1);
           }
 
-          if (preferences.autoSyncGraph) {
-            void fetchState();
-          }
+          void fetchState();
         } catch (err) {
           reportDataParseWarning(err);
         }
@@ -472,7 +464,7 @@ export default function App() {
         activeUnlisten();
       }
     };
-  }, [applyInstrumentContent, fetchState, preferences.autoSyncGraph, reportDataParseWarning, t]);
+  }, [applyInstrumentContent, fetchState, reportDataParseWarning, t]);
 
   const selectedGraphNode = useMemo(() => {
     if (!snapshot || !selectedNodeId) {
@@ -734,12 +726,8 @@ export default function App() {
   );
 
   return (
-    <div className={`app-frame${sidebarExpanded ? " has-expanded-sidebar" : ""}`}>
-      <aside
-        className={`app-sidebar-nav${sidebarExpanded ? " is-expanded" : ""}`}
-        onMouseEnter={handleSidebarMouseEnter}
-        onMouseLeave={handleSidebarMouseLeave}
-      >
+    <div className="app-frame">
+      <aside className="app-sidebar-nav">
         <div className="sidebar-nav-group">
           {sidebarItems.map((item) => (
             <SidebarNavItem
@@ -747,33 +735,39 @@ export default function App() {
               to={item.to}
               label={item.label}
               icon={item.icon}
-              expanded={sidebarExpanded}
-              onNavigate={() => {
-                clearSidebarTimer();
-                if (!preferences.pinSidebar) {
-                  setSidebarExpanded(false);
-                }
-              }}
+              showTooltip={visibleTooltip === item.key}
+              onTooltipOpen={() => handleSidebarMouseEnter(item.key)}
+              onTooltipClose={() => handleSidebarMouseLeave(item.key)}
             />
           ))}
         </div>
       </aside>
 
       <div className="app-stage-shell">
+        <header className="app-stage-toolbar">
+          <div className="toolbar-brand">
+            <p className="eyebrow">{t("app.brand.eyebrow")}</p>
+            <h1>{t("app.brand.title")}</h1>
+            <p>{t("app.brand.description")}</p>
+          </div>
+          <div className="toolbar-actions">
+            <button type="button" onClick={() => void fetchState()} disabled={loading} className="ghost-button">
+              <RefreshCw aria-hidden="true" className={`toolbar-control-icon${loading ? " is-spinning" : ""}`} />
+              <span>{loading ? t("app.toolbar.syncing") : t("app.toolbar.syncGraph")}</span>
+            </button>
+          </div>
+        </header>
+
         <main className="app-route-stage">
           <Routes>
-            <Route path="/" element={<Navigate to={`/${preferences.startupPage}`} replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"
               element={
                 <Dashboard
                   cards={dataCards}
-                  noteCount={localNotes.length}
-                  nodeCount={snapshot?.nodes.length ?? 0}
-                  edgeCount={snapshot?.edges.length ?? 0}
                   loading={loading}
                   ingestLoading={ingestLoading}
-                  autoSyncGraph={preferences.autoSyncGraph}
                   onImport={importInstrumentData}
                   onRefresh={fetchState}
                   onSaveQuickNote={createQuickNote}
@@ -884,18 +878,12 @@ export default function App() {
                 <SettingsView
                   theme={theme}
                   language={language}
-                  startupPage={preferences.startupPage}
-                  autoSyncGraph={preferences.autoSyncGraph}
-                  pinSidebar={preferences.pinSidebar}
                   onThemeChange={setTheme}
                   onLanguageChange={changeLanguage}
-                  onStartupPageChange={(startupPage) => setPreferences((prev) => ({ ...prev, startupPage }))}
-                  onAutoSyncGraphChange={(autoSyncGraph) => setPreferences((prev) => ({ ...prev, autoSyncGraph }))}
-                  onPinSidebarChange={(pinSidebar) => setPreferences((prev) => ({ ...prev, pinSidebar }))}
                 />
               }
             />
-            <Route path="*" element={<Navigate to={`/${preferences.startupPage}`} replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
 

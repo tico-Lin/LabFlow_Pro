@@ -21,7 +21,7 @@ const zhTW = {
       description: "以深色儀表板整合資料匯入、峰值分析、試算表工作流與星圖推理。"
     },
     navigation: {
-      dashboard: "首頁",
+      dashboard: "數據中樞",
       notes: "傳統筆記",
       workbench: "分析工作台",
       graphView: "知識星圖",
@@ -145,9 +145,6 @@ const zhTW = {
       moduleLabel: "分析模組",
       parametersTitle: "動態參數區",
       parametersDescription: "下方表單會依照目前選取的模組自動切換。",
-      defaultValue: "預設值",
-      numberOnlyHint: "僅接受數字輸入，可使用小數。",
-      parameterHint: "若維持不變，模組執行時會採用預設值。",
       noParameters: "這個模組目前沒有可編輯參數。",
       cancel: "取消",
       run: "確認執行"

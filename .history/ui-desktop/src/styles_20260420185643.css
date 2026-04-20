@@ -376,8 +376,6 @@ select {
 .app-sidebar-nav:not(.is-expanded) .sidebar-nav-button {
   grid-template-columns: 1fr;
   justify-items: center;
-  align-items: center;
-  justify-content: center;
   padding-inline: 0;
 }
 
@@ -404,7 +402,6 @@ select {
   width: 1.35rem;
   height: 1.35rem;
   stroke: currentColor;
-  justify-self: center;
 }
 
 .sidebar-nav-label {
@@ -499,7 +496,6 @@ select {
 .settings-nav-link {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  width: 100%;
   gap: 0.85rem;
   padding: 0.95rem 1rem;
   border: 1px solid var(--border);
@@ -507,7 +503,6 @@ select {
   background: linear-gradient(180deg, var(--bg-summary-top) 0%, var(--bg-summary-bottom) 100%);
   color: var(--text-primary);
   text-decoration: none;
-  text-align: left;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -1481,7 +1476,6 @@ select {
 
 .analysis-panel-field-input-row {
   align-items: stretch;
-  flex-wrap: wrap;
 }
 
 .analysis-panel-field-input-row input,
@@ -1493,8 +1487,7 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  max-width: 100%;
+  min-width: fit-content;
   padding: 0.75rem 0.85rem;
   border-radius: 0.85rem;
   border: 1px solid var(--border);
@@ -1502,7 +1495,7 @@ select {
   color: var(--text-chip);
   font-size: 0.86rem;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .analysis-panel-field-meta {
@@ -1627,13 +1620,6 @@ select {
   .analysis-panel-field-grid {
     grid-template-columns: 1fr;
   }
-
-  .settings-toggle-grid,
-  .settings-metric-grid,
-  .settings-option-grid,
-  .module-detail-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 860px) {
@@ -1643,7 +1629,6 @@ select {
 
   .app-sidebar-nav {
     padding: 0.55rem;
-    width: 100%;
   }
 
   .sidebar-nav-group {
@@ -1652,14 +1637,19 @@ select {
     justify-content: center;
   }
 
-  .sidebar-nav-button,
-  .app-sidebar-nav.is-expanded .sidebar-nav-button {
-    width: 3.1rem;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding-inline: 0;
+  .sidebar-tooltip {
+    left: 50%;
+    top: calc(100% + 0.85rem);
+    transform: translateX(-50%);
   }
 
+  .sidebar-tooltip::before {
+    left: 50%;
+    top: -0.35rem;
+    transform: translateX(-50%) rotate(135deg);
+  }
+
+  .app-stage-toolbar,
   .page-hero {
     flex-direction: column;
   }
@@ -1668,16 +1658,11 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .dashboard-focus-panel,
   .quick-note-panel-header,
   .notes-sidebar-header,
   .notes-editor-header,
   .notes-list-item-topline {
     flex-direction: column;
-  }
-
-  .sidebar-nav-label {
-    display: none;
   }
 }
 
@@ -1755,17 +1740,6 @@ select {
   gap: 1rem;
 }
 
-.workbench-panel-flat {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.workbench-panel-flat .instrument-summary {
-  margin-bottom: 0.05rem;
-}
-
 .office-canvas-shell {
   margin: 0;
 }
@@ -1829,23 +1803,12 @@ select {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  padding: 1rem 1rem 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, var(--bg-summary-top) 0%, var(--bg-summary-bottom) 100%);
-}
-
-.spreadsheet-grid-shell.is-resizable {
-  min-height: 22rem;
-  resize: both;
-  overflow: auto;
 }
 
 .spreadsheet-grid-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 0.75rem;
   color: var(--text-secondary);
 }

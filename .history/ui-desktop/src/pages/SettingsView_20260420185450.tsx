@@ -1,5 +1,5 @@
 import { Cpu, Globe2, MoonStar, Palette, PanelLeftOpen, Rocket, Zap } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { ThemeName } from "../app/labflow";
 import { useTranslation, type Language } from "../i18n";
 
@@ -31,13 +31,6 @@ export default function SettingsView({
   onPinSidebarChange
 }: SettingsViewProps) {
   const { t } = useTranslation();
-  const sectionRefs = {
-    language: useRef<HTMLElement | null>(null),
-    appearance: useRef<HTMLElement | null>(null),
-    performance: useRef<HTMLElement | null>(null),
-    workspace: useRef<HTMLElement | null>(null),
-    navigation: useRef<HTMLElement | null>(null)
-  };
 
   const sections = useMemo(
     () => [
@@ -110,27 +103,20 @@ export default function SettingsView({
               const Icon = section.icon;
 
               return (
-                <button
-                  key={section.key}
-                  type="button"
-                  className="settings-nav-link"
-                  onClick={() => {
-                    sectionRefs[section.key].current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                >
+                <a key={section.key} href={`#${section.key}`} className="settings-nav-link">
                   <Icon aria-hidden="true" />
                   <div>
                     <strong>{section.title}</strong>
                     <span>{section.description}</span>
                   </div>
-                </button>
+                </a>
               );
             })}
           </nav>
         </aside>
 
         <div className="settings-content">
-          <section id="language" ref={sectionRefs.language} className="settings-panel app-surface">
+          <section id="language" className="settings-panel app-surface">
             <div className="settings-panel-header">
               <div>
                 <p className="eyebrow">{t("settings.sections.language.kicker")}</p>
@@ -149,7 +135,7 @@ export default function SettingsView({
             </label>
           </section>
 
-          <section id="appearance" ref={sectionRefs.appearance} className="settings-panel app-surface">
+          <section id="appearance" className="settings-panel app-surface">
             <div className="settings-panel-header">
               <div>
                 <p className="eyebrow">{t("settings.sections.appearance.kicker")}</p>
@@ -179,7 +165,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section id="performance" ref={sectionRefs.performance} className="settings-panel app-surface">
+          <section id="performance" className="settings-panel app-surface">
             <div className="settings-panel-header">
               <div>
                 <p className="eyebrow">{t("settings.sections.performance.kicker")}</p>
@@ -208,7 +194,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section id="workspace" ref={sectionRefs.workspace} className="settings-panel app-surface">
+          <section id="workspace" className="settings-panel app-surface">
             <div className="settings-panel-header">
               <div>
                 <p className="eyebrow">{t("settings.sections.workspace.kicker")}</p>
@@ -241,7 +227,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section id="navigation" ref={sectionRefs.navigation} className="settings-panel app-surface">
+          <section id="navigation" className="settings-panel app-surface">
             <div className="settings-panel-header">
               <div>
                 <p className="eyebrow">{t("settings.sections.navigation.kicker")}</p>
