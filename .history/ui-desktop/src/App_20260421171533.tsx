@@ -35,7 +35,6 @@ const THEME_STORAGE_KEY = "labflow.theme";
 const APP_PREFERENCES_STORAGE_KEY = "labflow.preferences";
 const SIDEBAR_EXPAND_DELAY_MS = 3000;
 const SIDEBAR_COLLAPSE_DELAY_MS = 120;
-const SIDEBAR_COLLAPSE_ANIMATION_MS = 280;
 const DATA_PARSE_WARNING_MESSAGE = "資料解析警告";
 
 type SidebarItemKey = "dashboard" | "notes" | "workbench" | "graph" | "modules" | "settings";
@@ -137,7 +136,6 @@ export default function App() {
   const [noteSaving, setNoteSaving] = useState(false);
   const [preferences, setPreferences] = useState<AppPreferences>(() => readInitialPreferences());
   const [isTopNavLayout, setIsTopNavLayout] = useState(false);
-  const [sidebarCollapsing, setSidebarCollapsing] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const sidebarTimerRef = useRef<number | null>(null);
 
@@ -200,7 +198,6 @@ export default function App() {
     }
 
     clearSidebarTimer();
-    setSidebarCollapsing(false);
 
     if (preferences.pinSidebar) {
       setSidebarExpanded(true);
@@ -221,12 +218,8 @@ export default function App() {
     clearSidebarTimer();
     if (!preferences.pinSidebar) {
       sidebarTimerRef.current = window.setTimeout(() => {
-        setSidebarCollapsing(true);
         setSidebarExpanded(false);
-        sidebarTimerRef.current = window.setTimeout(() => {
-          setSidebarCollapsing(false);
-          sidebarTimerRef.current = null;
-        }, SIDEBAR_COLLAPSE_ANIMATION_MS);
+        sidebarTimerRef.current = null;
       }, SIDEBAR_COLLAPSE_DELAY_MS);
     }
   }, [clearSidebarTimer, isTopNavLayout, preferences.pinSidebar]);
@@ -242,12 +235,10 @@ export default function App() {
 
   useEffect(() => {
     if (isTopNavLayout) {
-      setSidebarCollapsing(false);
       setSidebarExpanded(false);
       return;
     }
 
-    setSidebarCollapsing(false);
     setSidebarExpanded(preferences.pinSidebar);
   }, [isTopNavLayout, preferences.pinSidebar]);
 
@@ -652,7 +643,7 @@ export default function App() {
   return (
     <div className={`app-frame${sidebarExpanded && !isTopNavLayout ? " has-expanded-sidebar" : ""}`}>
       <aside
-        className={`app-sidebar-nav${sidebarExpanded && !isTopNavLayout ? " is-expanded" : ""}${sidebarCollapsing && !isTopNavLayout ? " is-collapsing" : ""}`}
+        className={`app-sidebar-nav${sidebarExpanded && !isTopNavLayout ? " is-expanded" : ""}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
       >
@@ -663,10 +654,9 @@ export default function App() {
               to={item.to}
               label={item.label}
               icon={item.icon}
-              expanded={(sidebarExpanded || sidebarCollapsing) && !isTopNavLayout}
+              expanded={sidebarExpanded && !isTopNavLayout}
               onNavigate={() => {
                 clearSidebarTimer();
-                setSidebarCollapsing(false);
                 if (!preferences.pinSidebar && !isTopNavLayout) {
                   setSidebarExpanded(false);
                 }

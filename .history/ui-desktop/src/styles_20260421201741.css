@@ -368,7 +368,6 @@ select {
   justify-content: flex-start;
   gap: 0.9rem;
   padding: 0 0.95rem;
-  overflow: hidden;
   border-radius: 1rem;
   border: 1px solid var(--border-ghost-button);
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 15, 24, 0.92) 100%);
@@ -377,17 +376,19 @@ select {
     inset 0 1px 0 rgba(148, 163, 184, 0.08),
     0 10px 22px rgba(2, 6, 23, 0.32);
   transition:
-    transform 280ms cubic-bezier(0.22, 0.8, 0.24, 1),
-    border-color 280ms ease,
-    background-color 280ms ease,
-    color 280ms ease,
-    box-shadow 280ms ease;
+    gap 220ms cubic-bezier(0.22, 0.8, 0.24, 1),
+    transform 220ms cubic-bezier(0.22, 0.8, 0.24, 1),
+    border-color 220ms ease,
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms ease,
+    padding 220ms cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
 .app-sidebar-nav:not(.is-expanded):not(.is-collapsing) .sidebar-nav-button {
-  justify-content: flex-start;
-  gap: 0.9rem;
-  padding-inline: 0.95rem;
+  justify-content: center;
+  gap: 0;
+  padding-inline: 0;
 }
 
 .sidebar-nav-button:hover {
@@ -415,12 +416,12 @@ select {
   height: 1.35rem;
   stroke: currentColor;
   opacity: 1;
-  transform: none;
-  transition: none;
+  transform: translateY(0);
+  transition: transform 240ms cubic-bezier(0.22, 0.8, 0.24, 1), opacity 200ms ease;
 }
 
 .app-sidebar-nav:not(.is-expanded):not(.is-collapsing) .sidebar-nav-button svg {
-  transform: none;
+  transform: translateY(8px);
 }
 
 .app-sidebar-nav.is-collapsing .sidebar-nav-button {
@@ -430,8 +431,8 @@ select {
 }
 
 .app-sidebar-nav.is-collapsing .sidebar-nav-button svg {
-  transform: none;
-  opacity: 1;
+  transform: translateY(0);
+  opacity: 0.88;
 }
 
 .sidebar-nav-label {
@@ -443,9 +444,9 @@ select {
   text-overflow: ellipsis;
   transform: translateX(-0.25rem);
   transition:
-    max-width 280ms cubic-bezier(0.22, 0.8, 0.24, 1),
+    max-width 220ms cubic-bezier(0.22, 0.8, 0.24, 1),
     opacity 220ms ease,
-    transform 280ms cubic-bezier(0.22, 0.8, 0.24, 1);
+    transform 220ms cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
 .sidebar-nav-label.is-visible {
