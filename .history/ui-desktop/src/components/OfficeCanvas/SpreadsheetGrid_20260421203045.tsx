@@ -870,14 +870,12 @@ export default function SpreadsheetGrid({
     }
 
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
 
     const startX = event.clientX;
     const startY = event.clientY;
-    const startWidth = viewportRef.current?.clientWidth ?? viewportSize.width;
-    const startHeight = viewportRef.current?.clientHeight ?? viewportSize.height;
+    const startWidth = viewportSize.width;
+    const startHeight = viewportSize.height;
     const previousUserSelect = document.body.style.userSelect;
-    const resizeHandle = event.currentTarget;
 
     setIsResizing(true);
     document.body.style.userSelect = "none";
@@ -898,9 +896,6 @@ export default function SpreadsheetGrid({
     const handlePointerUp = () => {
       setIsResizing(false);
       document.body.style.userSelect = previousUserSelect;
-      if (resizeHandle.hasPointerCapture(event.pointerId)) {
-        resizeHandle.releasePointerCapture(event.pointerId);
-      }
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
