@@ -196,6 +196,7 @@ export default function Workbench({
     setAnalysisError(null);
 
     try {
+      const response = await invoke<string>("run_analysis_module", {
       const response = await invoke<string>("run_plugin_sandbox", {
         pluginId: selectedModule.id,
         params: JSON.stringify(buildModulePayload().parameters),

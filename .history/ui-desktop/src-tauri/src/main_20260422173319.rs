@@ -3,7 +3,7 @@
 use std::{path::PathBuf, sync::Mutex};
 
 use core_engine::crdt::{self, LamportClock, NodePayload, OpKind, Operation};
-use core_engine::plugin_manager::{execute_plugin, scan_plugins, PluginManifest};
+use core_engine::plugin_manager::{scan_plugins, PluginManifest};
 use pyo3::{prelude::*, types::PyList};
 use serde_json::json;
 use tauri::{Manager, State, Window};
@@ -138,32 +138,6 @@ fn get_available_plugins() -> Result<Vec<PluginManifest>, String> {
     }
 
     Ok(Vec::new())
-}
-
-#[tauri::command]
-fn run_plugin_sandbox(
-    plugin_id: String,
-    params: String,
-    blob_hash: Option<String>,
-) -> Result<String, String> {
-    let tauri_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let candidate_dirs = [
-        tauri_dir.join("../plugins"),
-        tauri_dir.join("../../plugins"),
-    ];
-
-    for dir in candidate_dirs {
-        if !dir.is_dir() {
-            continue;
-        }
-
-        let plugins = scan_plugins(&dir);
-        if let Some(plugin) = plugins.into_iter().find(|item| item.id == plugin_id) {
-            return execute_plugin(&plugin, &params, blob_hash.as_deref());
-        }
-    }
-
-    Err(format!("plugin not found: {plugin_id}"))
 }
 
 #[tauri::command]
@@ -442,7 +416,6 @@ fn main() {
             ingest_real_data,
             analyze_cv_data,
             get_available_plugins,
-            run_plugin_sandbox,
             run_analysis_module,
             commit_agent_analysis,
             create_note_node,
