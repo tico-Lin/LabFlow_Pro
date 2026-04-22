@@ -8,20 +8,6 @@ import math
 
 def get_available_modules() -> str:
     modules = [
-         {
-            "id": "magic_filter",
-            "name": "魔法濾波器",
-            "description": "用神秘力量過濾雜訊",
-            "supportedFormats": ["CSV"],
-            "parameters": [
-            {
-            "key": "magic_power",
-            "name": "魔力強度",
-            "type": "number",
-            "defaultValue": 99
-            }
-            ]
-         },
         {
             "id": "find_max_peak",
             "name": "Peak Finder",

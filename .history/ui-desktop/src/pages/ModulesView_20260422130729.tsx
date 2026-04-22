@@ -12,7 +12,7 @@ type ModuleRecord = AnalysisModule & {
 
 export default function ModulesView() {
   const { t } = useTranslation();
-  const [analysisModules, setAnalysisModules] = useState<AnalysisModule[]>([]);
+  const [modules, setModules] = useState<AnalysisModule[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(true);
   const [modulesError, setModulesError] = useState<string | null>(null);
 
@@ -29,13 +29,13 @@ export default function ModulesView() {
           return;
         }
 
-        setAnalysisModules(parseAnalysisModules(payload));
+        setModules(parseAnalysisModules(payload));
       } catch (error) {
         if (!isActive) {
           return;
         }
 
-        setAnalysisModules([]);
+        setModules([]);
         setModulesError(error instanceof Error ? error.message : String(error));
       } finally {
         if (isActive) {
@@ -51,14 +51,14 @@ export default function ModulesView() {
     };
   }, []);
 
-  const moduleRecords = useMemo<ModuleRecord[]>(
+  const modules = useMemo<ModuleRecord[]>(
     () =>
-      analysisModules.map((module) => ({
+      modules.map((module) => ({
         ...module,
         badge: module.id === "find_max_peak" ? t("modules.badges.analysis") : t("modules.badges.test"),
         icon: module.id === "find_max_peak" ? FlaskConical : Waves
       })),
-    [analysisModules, t]
+    [modules, t]
   );
 
   return (
@@ -80,11 +80,11 @@ export default function ModulesView() {
         <div className="modules-overview-stats">
           <div className="summary-card">
             <span className="summary-card-label">{t("modules.stats.total")}</span>
-            <strong>{isLoadingModules ? "--" : moduleRecords.length}</strong>
+            <strong>{isLoadingModules ? "--" : modules.length}</strong>
           </div>
           <div className="summary-card">
             <span className="summary-card-label">{t("modules.stats.ready")}</span>
-            <strong>{isLoadingModules ? "--" : moduleRecords.length}</strong>
+            <strong>{isLoadingModules ? "--" : modules.length}</strong>
           </div>
         </div>
       </section>
@@ -111,56 +111,56 @@ export default function ModulesView() {
         </div>
       ) : (
         <div className="modules-grid">
-          {moduleRecords.map((module) => {
-            const Icon = module.icon;
+          {modules.map((module) => {
+          const Icon = module.icon;
 
-            return (
-              <Link key={module.id} to={`/modules/${module.id}`} className="module-card-link">
-                <article className="module-card app-surface">
-                  <div className="module-card-topline">
-                    <span className="module-card-badge">{module.badge}</span>
-                    <Box aria-hidden="true" className="module-card-outline-icon" />
-                  </div>
+          return (
+            <Link key={module.id} to={`/modules/${module.id}`} className="module-card-link">
+              <article className="module-card app-surface">
+              <div className="module-card-topline">
+                <span className="module-card-badge">{module.badge}</span>
+                <Box aria-hidden="true" className="module-card-outline-icon" />
+              </div>
 
-                  <div className="module-card-heading">
-                    <span className="module-card-icon-shell">
-                      <Icon aria-hidden="true" />
+              <div className="module-card-heading">
+                <span className="module-card-icon-shell">
+                  <Icon aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>{module.name}</h3>
+                  <p>{module.description}</p>
+                </div>
+              </div>
+
+              <div className="module-card-section">
+                <span className="module-card-label">{t("modules.labels.formats")}</span>
+                <div className="module-chip-row">
+                  {module.supportedFormats.map((format) => (
+                    <span key={`${module.id}-${format}`} className="metadata-chip">
+                      {format}
                     </span>
-                    <div>
-                      <h3>{module.name}</h3>
-                      <p>{module.description}</p>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  <div className="module-card-section">
-                    <span className="module-card-label">{t("modules.labels.formats")}</span>
-                    <div className="module-chip-row">
-                      {module.supportedFormats.map((format) => (
-                        <span key={`${module.id}-${format}`} className="metadata-chip">
-                          {format}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+              <div className="module-card-section">
+                <span className="module-card-label">{t("modules.labels.parameters")}</span>
+                <div className="module-chip-row">
+                  {module.parameters.map((parameter) => (
+                    <span key={`${module.id}-${parameter.key}`} className="metadata-chip">
+                      {parameter.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-                  <div className="module-card-section">
-                    <span className="module-card-label">{t("modules.labels.parameters")}</span>
-                    <div className="module-chip-row">
-                      {module.parameters.map((parameter) => (
-                        <span key={`${module.id}-${parameter.key}`} className="metadata-chip">
-                          {parameter.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="module-card-footer">
-                    <span>{t("modules.actions.viewDetails")}</span>
-                    <span className="module-card-link-pill">/modules/{module.id}</span>
-                  </div>
-                </article>
-              </Link>
-            );
+              <div className="module-card-footer">
+                <span>{t("modules.actions.viewDetails")}</span>
+                <span className="module-card-link-pill">/modules/{module.id}</span>
+              </div>
+              </article>
+            </Link>
+          );
           })}
         </div>
       )}
