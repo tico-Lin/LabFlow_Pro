@@ -44,11 +44,7 @@ export default function Dashboard({
   const [quickNote, setQuickNote] = useState("");
   const [quickNoteSaving, setQuickNoteSaving] = useState(false);
   const [quickNoteError, setQuickNoteError] = useState<string | null>(null);
-  const {
-    layouts: dashboardLayouts,
-    handleLayoutChange: handleDashboardLayoutChange,
-    handleLayoutCommit: handleDashboardLayoutCommit
-  } =
+  const { layouts: dashboardLayouts, handleLayoutChange: handleDashboardLayoutChange } =
     usePageGrid("dashboard-layout", DEFAULT_DASHBOARD_LAYOUT);
 
   useEffect(() => {
@@ -118,15 +114,8 @@ export default function Dashboard({
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleDashboardLayoutChange}
-        onDragStop={handleDashboardLayoutCommit}
-        onResizeStop={handleDashboardLayoutCommit}
       >
         <div key="quick-note" className="page-grid-item">
           <div className="grid-drag-handle" />

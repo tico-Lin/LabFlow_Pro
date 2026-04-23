@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Responsive, WidthProvider, type Layout } from "react-grid-layout/legacy";
 import { useNavigate } from "react-router-dom";
 import type { GraphStateSnapshot, NoteDocument, ThemeName } from "../app/labflow";
@@ -58,11 +59,7 @@ export default function GraphView({
 }: GraphViewProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    layouts: graphViewLayouts,
-    handleLayoutChange: handleGraphViewLayoutChange,
-    handleLayoutCommit: handleGraphViewLayoutCommit
-  } =
+  const { layouts: graphViewLayouts, handleLayoutChange: handleGraphViewLayoutChange } =
     usePageGrid("graphview-layout", DEFAULT_GRAPHVIEW_LAYOUT);
 
   return (
@@ -93,15 +90,8 @@ export default function GraphView({
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleGraphViewLayoutChange}
-        onDragStop={handleGraphViewLayoutCommit}
-        onResizeStop={handleGraphViewLayoutCommit}
       >
         <div key="graph-stage" className="page-grid-item">
           <div className="grid-drag-handle" />

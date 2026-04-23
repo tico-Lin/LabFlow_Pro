@@ -47,11 +47,7 @@ export default function NoteView({ graph }: NoteViewProps) {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
-  const {
-    layouts: noteViewLayouts,
-    handleLayoutChange: handleNoteViewLayoutChange,
-    handleLayoutCommit: handleNoteViewLayoutCommit
-  } =
+  const { layouts: noteViewLayouts, handleLayoutChange: handleNoteViewLayoutChange } =
     usePageGrid("noteview-layout", DEFAULT_NOTEVIEW_LAYOUT);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
@@ -247,15 +243,8 @@ export default function NoteView({ graph }: NoteViewProps) {
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleNoteViewLayoutChange}
-        onDragStop={handleNoteViewLayoutCommit}
-        onResizeStop={handleNoteViewLayoutCommit}
       >
         <div key="notes-sidebar" className="page-grid-item">
           <div className="grid-drag-handle" />

@@ -301,10 +301,6 @@ export default function Workbench({
 
   const handleWorkbenchLayoutChange = useCallback((layout: Layout) => {
     setWorkbenchLayout(layout);
-  }, []);
-
-  const handleWorkbenchLayoutCommit = useCallback((layout: Layout) => {
-    setWorkbenchLayout(layout);
     window.localStorage.setItem(WORKBENCH_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   }, []);
 
@@ -338,15 +334,8 @@ export default function Workbench({
             rowHeight={72}
             margin={[16, 16]}
             containerPadding={[0, 0]}
-            useCSSTransforms={true}
-            compactType={null}
-            isResizable={true}
-            isDraggable={true}
-            resizeHandles={["se"]}
             draggableHandle=".grid-drag-handle"
             onLayoutChange={handleWorkbenchLayoutChange}
-            onDragStop={handleWorkbenchLayoutCommit}
-            onResizeStop={handleWorkbenchLayoutCommit}
           >
             <div key="metadata" style={WORKBENCH_CARD_STYLE}>
               <div className="grid-drag-handle" />
@@ -376,7 +365,6 @@ export default function Workbench({
             </div>
 
             <div key="spreadsheet" style={WORKBENCH_CARD_STYLE}>
-              <div className="grid-drag-handle" />
               <div className="workbench-grid-item-body">
                 <SpreadsheetGrid
                   data={spreadsheetData}
@@ -392,7 +380,6 @@ export default function Workbench({
             </div>
 
             <div key="chart" style={WORKBENCH_CARD_STYLE}>
-              <div className="grid-drag-handle" />
               <div className="chart-shell workbench-grid-item-body">
                 <div className="panel-heading compact-panel-heading">
                   <div>

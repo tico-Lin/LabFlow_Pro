@@ -117,9 +117,6 @@ export default function SettingsView({
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        isResizable={false}
-        isDraggable={true}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleSettingsLayoutChange}
       >

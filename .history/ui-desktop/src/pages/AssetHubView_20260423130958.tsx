@@ -97,11 +97,7 @@ export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
   const { t } = useTranslation();
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const {
-    layouts: assetHubLayouts,
-    handleLayoutChange: handleAssetHubLayoutChange,
-    handleLayoutCommit: handleAssetHubLayoutCommit
-  } =
+  const { layouts: assetHubLayouts, handleLayoutChange: handleAssetHubLayoutChange } =
     usePageGrid("assethub-layout", DEFAULT_ASSETHUB_LAYOUT);
 
   const fileNodes = useMemo(
@@ -160,15 +156,8 @@ export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleAssetHubLayoutChange}
-        onDragStop={handleAssetHubLayoutCommit}
-        onResizeStop={handleAssetHubLayoutCommit}
       >
         <div key="assets" className="page-grid-item">
           <div className="grid-drag-handle" />

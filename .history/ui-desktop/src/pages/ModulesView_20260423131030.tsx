@@ -24,11 +24,7 @@ export default function ModulesView() {
   const [analysisModules, setAnalysisModules] = useState<PluginManifest[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(true);
   const [modulesError, setModulesError] = useState<string | null>(null);
-  const {
-    layouts: modulesLayouts,
-    handleLayoutChange: handleModulesLayoutChange,
-    handleLayoutCommit: handleModulesLayoutCommit
-  } =
+  const { layouts: modulesLayouts, handleLayoutChange: handleModulesLayoutChange } =
     usePageGrid("modulesview-layout", DEFAULT_MODULESVIEW_LAYOUT);
 
   useEffect(() => {
@@ -94,15 +90,8 @@ export default function ModulesView() {
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleModulesLayoutChange}
-        onDragStop={handleModulesLayoutCommit}
-        onResizeStop={handleModulesLayoutCommit}
       >
         <div key="modules-overview" className="page-grid-item">
           <div className="grid-drag-handle" />

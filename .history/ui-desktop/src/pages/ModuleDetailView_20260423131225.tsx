@@ -74,11 +74,7 @@ export default function ModuleDetailView() {
     return matchedModule ? buildModuleRecord(matchedModule, t) : null;
   }, [id, modules, t]);
 
-  const {
-    layouts: moduleDetailLayouts,
-    handleLayoutChange: handleModuleDetailLayoutChange,
-    handleLayoutCommit: handleModuleDetailLayoutCommit
-  } =
+  const { layouts: moduleDetailLayouts, handleLayoutChange: handleModuleDetailLayoutChange } =
     usePageGrid("moduledetail-layout", DEFAULT_MODULEDETAIL_LAYOUT);
 
   if (isLoadingModules) {
@@ -173,15 +169,8 @@ export default function ModuleDetailView() {
         rowHeight={72}
         margin={[12, 12]}
         containerPadding={[0, 0]}
-        useCSSTransforms={true}
-        compactType={null}
-        isResizable={true}
-        isDraggable={true}
-        resizeHandles={["se"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleModuleDetailLayoutChange}
-        onDragStop={handleModuleDetailLayoutCommit}
-        onResizeStop={handleModuleDetailLayoutCommit}
       >
         <div key="module-main" className="page-grid-item">
           <div className="grid-drag-handle" />
