@@ -10,9 +10,9 @@ import { useTranslation } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_DASHBOARD_LAYOUT: Layout = [
-  { i: "quick-note", x: 0, y: 0, w: 12, h: 4 },
-  { i: "summary",    x: 0, y: 4, w: 12, h: 3 },
-  { i: "focus",      x: 0, y: 7, w: 12, h: 3 }
+  { i: "quick-note", x: 0, y: 0, w: 12, h: 4, minW: 4, minH: 3 },
+  { i: "summary",    x: 0, y: 4, w: 12, h: 3, minW: 4, minH: 2 },
+  { i: "focus",      x: 0, y: 7, w: 12, h: 3, minW: 4, minH: 2 }
 ];
 
 type DashboardProps = {
@@ -122,7 +122,7 @@ export default function Dashboard({
         compactType={null}
         isResizable={true}
         isDraggable={true}
-        resizeHandles={["se"]}
+        resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleDashboardLayoutChange}
         onDragStop={handleDashboardLayoutCommit}

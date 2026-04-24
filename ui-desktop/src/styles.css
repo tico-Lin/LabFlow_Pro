@@ -258,6 +258,80 @@ select {
 
 .toolbar-brand {
   max-width: 46rem;
+
+}
+
+.pdf-viewer-shell {
+  height: 100%;
+  min-height: 360px;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(2, 6, 12, 0.7) 0%, rgba(12, 18, 28, 0.9) 100%);
+  padding: 0.75rem;
+}
+
+.pdf-viewer-scroll {
+  height: 100%;
+  max-height: 72vh;
+  overflow: auto;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: radial-gradient(circle at top, rgba(148, 163, 184, 0.12) 0%, transparent 58%);
+}
+
+.pdf-viewer-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.pdf-viewer-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.48);
+  border-radius: 999px;
+}
+
+.pdf-viewer-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.9) 0%, rgba(71, 85, 105, 0.9) 100%);
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.6);
+}
+
+.pdf-viewer-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(125, 211, 252, 0.95) 0%, rgba(56, 189, 248, 0.95) 100%);
+}
+
+.pdf-document {
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+}
+
+.pdf-page-frame {
+  width: max-content;
+  max-width: 100%;
+}
+
+.pdf-page-frame .react-pdf__Page {
+  display: flex;
+  justify-content: center;
+}
+
+.pdf-page-frame canvas {
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+  border-radius: 0.35rem;
+  box-shadow: 0 20px 54px rgba(2, 6, 23, 0.58), 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+.pdf-viewer-status,
+.pdf-viewer-error {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-secondary);
+}
+
+.pdf-viewer-error {
+  color: var(--text-error);
 }
 
 .toolbar-brand h1 {
@@ -1600,6 +1674,11 @@ select {
   will-change: transform;
 }
 
+.page-grid .react-grid-item,
+.workbench-grid-layout .react-grid-item {
+  box-sizing: border-box;
+}
+
 .page-grid .react-grid-item.cssTransforms {
   transition-property: transform, width, height;
   transition-duration: 120ms;
@@ -1624,6 +1703,15 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+
+.workbench-grid-item {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
 }
 
 /* Thin drag handle strip at the top of every grid item */
@@ -1650,11 +1738,106 @@ select {
   cursor: grabbing;
 }
 
+/* Window-like 8-way resize handles */
+.page-grid .react-resizable-handle,
+.workbench-grid-layout .react-resizable-handle {
+  opacity: 0.45;
+  transition: opacity 140ms ease;
+}
+
+.page-grid .react-grid-item:hover > .react-resizable-handle,
+.workbench-grid-layout .react-grid-item:hover > .react-resizable-handle {
+  opacity: 0.95;
+}
+
+/* Top edge - starts below drag handle area */
+.page-grid .react-resizable-handle-n,
+.workbench-grid-layout .react-resizable-handle-n {
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: n-resize;
+  pointer-events: auto;
+}
+
+/* Bottom edge - full coverage */
+.page-grid .react-resizable-handle-s,
+.workbench-grid-layout .react-resizable-handle-s {
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: s-resize;
+}
+
+/* Right edge - full coverage */
+.page-grid .react-resizable-handle-e,
+.workbench-grid-layout .react-resizable-handle-e {
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: e-resize;
+}
+
+/* Left edge - full coverage */
+.page-grid .react-resizable-handle-w,
+.workbench-grid-layout .react-resizable-handle-w {
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: w-resize;
+}
+
+/* Corner handles - positioned at corners with clear sizing */
+.page-grid .react-resizable-handle-ne,
+.workbench-grid-layout .react-resizable-handle-ne {
+  top: 10px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.page-grid .react-resizable-handle-nw,
+.workbench-grid-layout .react-resizable-handle-nw {
+  top: 10px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.page-grid .react-resizable-handle-se,
+.page-grid .react-resizable-handle-sw,
+.workbench-grid-layout .react-resizable-handle-se,
+.workbench-grid-layout .react-resizable-handle-sw {
+  width: 12px;
+  height: 12px;
+}
+
+.page-grid .react-resizable-handle-se,
+.workbench-grid-layout .react-resizable-handle-se {
+  bottom: -4px;
+  right: -4px;
+  cursor: se-resize;
+}
+
+.page-grid .react-resizable-handle-sw,
+.workbench-grid-layout .react-resizable-handle-sw {
+  bottom: -4px;
+  left: -4px;
+  cursor: sw-resize;
+}
+
 /* Scrollable body for content panels */
 .page-grid-item-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Non-scrollable body for canvas/chart panels */
@@ -1671,8 +1854,11 @@ select {
 .page-grid-item-body > div.app-surface {
   height: 100%;
   min-height: 0;
+  max-height: 100%;
+  max-width: 100%;
   overflow: auto;
   container-type: inline-size;
+  box-sizing: border-box;
 }
 
 .page-grid-item-body--canvas > .app-surface,
@@ -1682,9 +1868,23 @@ select {
   display: flex;
   flex-direction: column;
   container-type: inline-size;
+  box-sizing: border-box;
 }
 
-@container (max-width: 760px) {
+@container (max-width: 900px) {
+  .instrument-summary .metadata-chip:nth-child(n + 13),
+  .module-chip-row .metadata-chip:nth-child(n + 11) {
+    display: none;
+  }
+
+  .quick-note-panel .eyebrow,
+  .module-schema-preview,
+  .module-detail-copy-block {
+    display: none;
+  }
+}
+
+@container (max-width: 700px) {
   .quick-note-panel .eyebrow,
   .dashboard-focus-panel p,
   .graph-panel-header p,
@@ -1695,18 +1895,28 @@ select {
     display: none;
   }
 
+  .instrument-summary .metadata-chip:nth-child(n + 9),
+  .module-chip-row .metadata-chip:nth-child(n + 7) {
+    display: none;
+  }
+
   .graph-stats span:last-child,
   .metadata-list {
     display: none;
   }
 }
 
-@container (max-width: 560px) {
+@container (max-width: 520px) {
   .dashboard-summary-row .summary-card p,
   .module-card-section:nth-of-type(2),
   .module-card-footer,
   .graph-stats,
   .instrument-summary .metadata-list {
+    display: none;
+  }
+
+  .instrument-summary .metadata-chip:nth-child(n + 5),
+  .module-chip-row .metadata-chip:nth-child(n + 5) {
     display: none;
   }
 
@@ -1742,6 +1952,7 @@ select {
   padding: 0.55rem 0.65rem 0.65rem;
   gap: 0.55rem;
   container-type: inline-size;
+  box-sizing: border-box;
 }
 
 .analysis-inspector {
@@ -2194,10 +2405,14 @@ select {
   flex-direction: column;
   gap: 0.55rem;
   width: 100%;
+  min-width: 0;
+  min-height: 0;
   padding: 0.6rem 0.6rem 0.5rem;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent 30%);
   border-radius: 0.9rem;
   background: color-mix(in srgb, var(--bg-summary-top) 35%, transparent 65%);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .spreadsheet-grid-shell.is-fill {
@@ -2209,6 +2424,7 @@ select {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
+  height: 100%;
 }
 
 .spreadsheet-grid-shell.is-resizable {
@@ -2248,9 +2464,11 @@ select {
   overflow: auto;
   overscroll-behavior: contain;
   max-width: 100%;
+  max-height: 100%;
   border-radius: 0.78rem;
   border: 1px solid var(--border-grid);
   background: var(--canvas-grid-bg);
+  box-sizing: border-box;
 }
 
 .spreadsheet-grid-stage {
@@ -2384,11 +2602,16 @@ select {
 
 .star-graph-shell {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .star-graph-header {
   margin-bottom: 0.85rem;
+  flex-shrink: 0;
 }
 
 .star-graph-header h3 {
@@ -2403,12 +2626,17 @@ select {
 
 .star-graph-canvas {
   display: block;
+  flex: 1 1 auto;
   width: 100%;
-  min-height: min(72vh, 780px);
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  max-width: 100%;
   border: 1px solid var(--border-graph);
   border-radius: 1rem;
   background: radial-gradient(circle at top, var(--bg-graph-radial), transparent 35%), var(--canvas-graph-bg-start);
   box-shadow: inset 0 1px 0 var(--border-toolbar);
+  box-sizing: border-box;
 }
 
 .dashboard-header h2 {

@@ -8,8 +8,8 @@ import { useTranslation, type Language } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_SETTINGSVIEW_LAYOUT: Layout = [
-  { i: "settings-nav",     x: 0, y: 0, w: 3,  h: 12 },
-  { i: "settings-content", x: 3, y: 0, w: 9,  h: 12 }
+  { i: "settings-nav",     x: 0, y: 0, w: 3,  h: 12, minW: 3, minH: 6 },
+  { i: "settings-content", x: 3, y: 0, w: 9,  h: 12, minW: 6, minH: 8 }
 ];
 
 type StartupPage = "dashboard" | "notes" | "workbench" | "files" | "graph" | "modules" | "settings";

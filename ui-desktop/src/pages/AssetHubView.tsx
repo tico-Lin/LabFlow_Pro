@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Responsive, WidthProvider, type Layout } from "react-grid-layout/legacy";
+import { useNavigate } from "react-router-dom";
 import { normalizeGraphNodeType, type GraphNodeSnapshot, type GraphStateSnapshot } from "../app/labflow";
 import { PAGE_GRID_BREAKPOINTS, PAGE_GRID_COLS, usePageGrid } from "../app/usePageGrid";
 import { useTranslation } from "../i18n";
@@ -19,7 +20,7 @@ import { useTranslation } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_ASSETHUB_LAYOUT: Layout = [
-  { i: "assets", x: 0, y: 0, w: 12, h: 10 }
+  { i: "assets", x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 }
 ];
 
 type AssetHubViewProps = {
@@ -95,6 +96,7 @@ function formatFileSize(bytes: number): string {
 
 export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -164,7 +166,7 @@ export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
         compactType={null}
         isResizable={true}
         isDraggable={true}
-        resizeHandles={["se"]}
+        resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleAssetHubLayoutChange}
         onDragStop={handleAssetHubLayoutCommit}
@@ -184,9 +186,26 @@ export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
                   const file = parseFileNode(node);
                   const iconExtension = file.extension || "bin";
                   const Icon = resolveFileIcon(iconExtension);
+                  const isPdf = iconExtension.toLowerCase() === "pdf";
 
                   return (
-                    <article key={node.id} className="app-surface asset-file-card">
+                    <article
+                      key={node.id}
+                      className={`app-surface asset-file-card${isPdf ? " is-clickable" : ""}`}
+                      role={isPdf ? "button" : undefined}
+                      tabIndex={isPdf ? 0 : undefined}
+                      onClick={isPdf ? () => navigate(`/workbench?fileId=${encodeURIComponent(node.id)}`) : undefined}
+                      onKeyDown={
+                        isPdf
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                navigate(`/workbench?fileId=${encodeURIComponent(node.id)}`);
+                              }
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="asset-file-card-head">
                         <span className="asset-file-icon" aria-hidden="true">
                           <Icon />

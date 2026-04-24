@@ -8,12 +8,13 @@ import {
   type LayoutItem,
   type ResponsiveLayouts
 } from "react-grid-layout/legacy";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   buildAnalysisModuleFormState,
   formatMetadataLabel,
   formatMetadataValue,
   parsePluginManifests,
+  type GraphStateSnapshot,
   type PluginManifest,
   type ThemeName
 } from "../app/labflow";
@@ -31,9 +32,9 @@ type AnalysisResultState = {
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const WORKBENCH_LAYOUT_STORAGE_KEY = "workbench-layout-v2";
 const DEFAULT_WORKBENCH_LAYOUT: Layout = [
-  { i: "metadata",    x: 0, y: 0,  w: 12, h: 2 },
-  { i: "spreadsheet", x: 0, y: 2,  w: 12, h: 5 },
-  { i: "chart",       x: 0, y: 7,  w: 12, h: 6 }
+  { i: "metadata",    x: 0, y: 0,  w: 12, h: 3, minW: 4, minH: 2 },
+  { i: "spreadsheet", x: 0, y: 3,  w: 12, h: 6, minW: 5, minH: 4 },
+  { i: "chart",       x: 0, y: 9,  w: 12, h: 5, minW: 5, minH: 4 }
 ];
 const WORKBENCH_CARD_STYLE = {
   display: "flex",
@@ -45,6 +46,57 @@ const WORKBENCH_CARD_STYLE = {
 } as const;
 
 const NUMBER_INPUT_PATTERN = /^-?\d*(?:[.,]\d*)?$/u;
+
+function normalizeWorkbenchLayout(next: unknown): Layout {
+  if (!Array.isArray(next)) {
+    return DEFAULT_WORKBENCH_LAYOUT;
+  }
+
+  const parsed = next.filter((entry): entry is LayoutItem => {
+    if (!entry || typeof entry !== "object") {
+      return false;
+    }
+
+    const candidate = entry as Partial<LayoutItem>;
+    return (
+      typeof candidate.i === "string" &&
+      typeof candidate.x === "number" &&
+      typeof candidate.y === "number" &&
+      typeof candidate.w === "number" &&
+      typeof candidate.h === "number"
+    );
+  });
+
+  if (!parsed.length) {
+    return DEFAULT_WORKBENCH_LAYOUT;
+  }
+
+  const parsedById = new Map(parsed.map((item) => [item.i, item]));
+  return DEFAULT_WORKBENCH_LAYOUT.map((baseItem) => {
+    const current = parsedById.get(baseItem.i);
+    if (!current) {
+      return baseItem;
+    }
+
+    const minW = baseItem.minW ?? current.minW;
+    const minH = baseItem.minH ?? current.minH;
+    const maxW = baseItem.maxW ?? current.maxW;
+    const maxH = baseItem.maxH ?? current.maxH;
+
+    const normalizedW = Math.max(minW ?? 1, current.w);
+    const normalizedH = Math.max(minH ?? 1, current.h);
+
+    return {
+      ...current,
+      minW,
+      minH,
+      maxW,
+      maxH,
+      w: typeof maxW === "number" ? Math.min(normalizedW, maxW) : normalizedW,
+      h: typeof maxH === "number" ? Math.min(normalizedH, maxH) : normalizedH
+    };
+  });
+}
 
 function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
   if (!value || typeof value !== "object") {
@@ -72,6 +124,7 @@ function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
 }
 
 type WorkbenchProps = {
+  graph: GraphStateSnapshot | null;
   theme: ThemeName;
   spreadsheetData: SpreadsheetGridData;
   revision: number;
@@ -87,6 +140,7 @@ type WorkbenchProps = {
 };
 
 export default function Workbench({
+  graph,
   theme,
   spreadsheetData,
   revision,
@@ -101,6 +155,7 @@ export default function Workbench({
   onLoadNode
 }: WorkbenchProps) {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [analysisModules, setAnalysisModules] = useState<PluginManifest[]>([]);
@@ -124,26 +179,7 @@ export default function Workbench({
 
     try {
       const parsedLayout = JSON.parse(rawLayout) as unknown;
-      if (!Array.isArray(parsedLayout)) {
-        return DEFAULT_WORKBENCH_LAYOUT;
-      }
-
-      const normalizedLayout = parsedLayout.filter((entry): entry is LayoutItem => {
-        if (!entry || typeof entry !== "object") {
-          return false;
-        }
-
-        const candidate = entry as Partial<LayoutItem>;
-        return (
-          typeof candidate.i === "string" &&
-          typeof candidate.x === "number" &&
-          typeof candidate.y === "number" &&
-          typeof candidate.w === "number" &&
-          typeof candidate.h === "number"
-        );
-      });
-
-      return normalizedLayout.length ? normalizedLayout : DEFAULT_WORKBENCH_LAYOUT;
+      return normalizeWorkbenchLayout(parsedLayout);
     } catch {
       return DEFAULT_WORKBENCH_LAYOUT;
     }
@@ -164,11 +200,19 @@ export default function Workbench({
     [workbenchLayout]
   );
 
+  const fileIdFromQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const value = params.get("fileId");
+    return value && value.trim() ? value.trim() : null;
+  }, [location.search]);
+
+  const targetNodeId = fileIdFromQuery ?? id ?? null;
+
   useEffect(() => {
-    if (id) {
-      onLoadNode(id);
+    if (targetNodeId) {
+      onLoadNode(targetNodeId);
     }
-  }, [id, onLoadNode]);
+  }, [graph, onLoadNode, targetNodeId]);
 
   useEffect(() => {
     let isActive = true;
@@ -300,12 +344,13 @@ export default function Workbench({
   };
 
   const handleWorkbenchLayoutChange = useCallback((layout: Layout) => {
-    setWorkbenchLayout(layout);
+    setWorkbenchLayout(normalizeWorkbenchLayout(layout));
   }, []);
 
   const handleWorkbenchLayoutCommit = useCallback((layout: Layout) => {
-    setWorkbenchLayout(layout);
-    window.localStorage.setItem(WORKBENCH_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+    const normalizedLayout = normalizeWorkbenchLayout(layout);
+    setWorkbenchLayout(normalizedLayout);
+    window.localStorage.setItem(WORKBENCH_LAYOUT_STORAGE_KEY, JSON.stringify(normalizedLayout));
   }, []);
 
   return (
@@ -342,13 +387,13 @@ export default function Workbench({
             compactType={null}
             isResizable={true}
             isDraggable={true}
-            resizeHandles={["se"]}
+            resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
             draggableHandle=".grid-drag-handle"
             onLayoutChange={handleWorkbenchLayoutChange}
             onDragStop={handleWorkbenchLayoutCommit}
             onResizeStop={handleWorkbenchLayoutCommit}
           >
-            <div key="metadata" style={WORKBENCH_CARD_STYLE}>
+            <div key="metadata" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
               <div className="grid-drag-handle" />
               <div className="workbench-grid-item-body instrument-summary-card">
                 <div className="instrument-summary">
@@ -375,7 +420,7 @@ export default function Workbench({
               </div>
             </div>
 
-            <div key="spreadsheet" style={WORKBENCH_CARD_STYLE}>
+            <div key="spreadsheet" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
               <div className="grid-drag-handle" />
               <div className="workbench-grid-item-body">
                 <SpreadsheetGrid
@@ -391,7 +436,7 @@ export default function Workbench({
               </div>
             </div>
 
-            <div key="chart" style={WORKBENCH_CARD_STYLE}>
+            <div key="chart" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
               <div className="grid-drag-handle" />
               <div className="chart-shell workbench-grid-item-body">
                 <div className="panel-heading compact-panel-heading">

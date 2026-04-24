@@ -714,6 +714,7 @@ export default function App() {
               path="/workbench"
               element={
                 <Workbench
+                  graph={snapshot}
                   theme={theme}
                   spreadsheetData={spreadsheetData}
                   revision={revision}
@@ -733,6 +734,7 @@ export default function App() {
               path="/workbench/:id"
               element={
                 <Workbench
+                  graph={snapshot}
                   theme={theme}
                   spreadsheetData={spreadsheetData}
                   revision={revision}

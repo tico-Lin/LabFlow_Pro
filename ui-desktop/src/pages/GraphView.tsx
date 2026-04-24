@@ -9,8 +9,8 @@ import { useTranslation } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_GRAPHVIEW_LAYOUT: Layout = [
-  { i: "graph-stage", x: 0, y: 0, w: 8, h: 10 },
-  { i: "graph-side",  x: 8, y: 0, w: 4, h: 10 }
+  { i: "graph-stage", x: 0, y: 0, w: 8, h: 10, minW: 5, minH: 5 },
+  { i: "graph-side",  x: 8, y: 0, w: 4, h: 10, minW: 3, minH: 4 }
 ];
 
 type GraphViewProps = {
@@ -97,7 +97,7 @@ export default function GraphView({
         compactType={null}
         isResizable={true}
         isDraggable={true}
-        resizeHandles={["se"]}
+        resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleGraphViewLayoutChange}
         onDragStop={handleGraphViewLayoutCommit}

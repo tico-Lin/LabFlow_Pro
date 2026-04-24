@@ -1,6 +1,59 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Layout, LayoutItem } from "react-grid-layout/legacy";
 
+function isBasicLayoutItem(value: unknown): value is LayoutItem {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const item = value as Partial<LayoutItem>;
+  return (
+    typeof item.i === "string" &&
+    typeof item.x === "number" &&
+    typeof item.y === "number" &&
+    typeof item.w === "number" &&
+    typeof item.h === "number"
+  );
+}
+
+function normalizeLayout(next: unknown, defaults: Layout): Layout {
+  if (!Array.isArray(next)) {
+    return defaults;
+  }
+
+  const parsed = next.filter(isBasicLayoutItem);
+  if (!parsed.length) {
+    return defaults;
+  }
+
+  const parsedById = new Map(parsed.map((item) => [item.i, item]));
+
+  return defaults.map((baseItem) => {
+    const current = parsedById.get(baseItem.i);
+    if (!current) {
+      return baseItem;
+    }
+
+    const minW = baseItem.minW ?? current.minW;
+    const minH = baseItem.minH ?? current.minH;
+    const maxW = baseItem.maxW ?? current.maxW;
+    const maxH = baseItem.maxH ?? current.maxH;
+
+    const normalizedW = Math.max(minW ?? 1, current.w);
+    const normalizedH = Math.max(minH ?? 1, current.h);
+
+    return {
+      ...current,
+      minW,
+      minH,
+      maxW,
+      maxH,
+      w: typeof maxW === "number" ? Math.min(normalizedW, maxW) : normalizedW,
+      h: typeof maxH === "number" ? Math.min(normalizedH, maxH) : normalizedH
+    };
+  });
+}
+
 /**
  * Persistent grid layout hook.
  * Loads layout from localStorage on mount, and persists on drag/resize commit.
@@ -11,19 +64,7 @@ export function usePageGrid(storageKey: string, defaultLayout: Layout) {
     if (!raw) return defaultLayout;
     try {
       const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return defaultLayout;
-      const validItems = (parsed as unknown[]).filter((e): e is LayoutItem => {
-        if (!e || typeof e !== "object") return false;
-        const c = e as Partial<LayoutItem>;
-        return (
-          typeof c.i === "string" &&
-          typeof c.x === "number" &&
-          typeof c.y === "number" &&
-          typeof c.w === "number" &&
-          typeof c.h === "number"
-        );
-      });
-      return validItems.length === defaultLayout.length ? validItems : defaultLayout;
+      return normalizeLayout(parsed, defaultLayout);
     } catch {
       return defaultLayout;
     }
@@ -35,15 +76,16 @@ export function usePageGrid(storageKey: string, defaultLayout: Layout) {
   );
 
   const handleLayoutChange = useCallback((next: Layout) => {
-    setLayout(next);
-  }, []);
+    setLayout(normalizeLayout(next, defaultLayout));
+  }, [defaultLayout]);
 
   const handleLayoutCommit = useCallback(
     (next: Layout) => {
-      setLayout(next);
-      window.localStorage.setItem(storageKey, JSON.stringify(next));
+      const normalized = normalizeLayout(next, defaultLayout);
+      setLayout(normalized);
+      window.localStorage.setItem(storageKey, JSON.stringify(normalized));
     },
-    [storageKey]
+    [defaultLayout, storageKey]
   );
 
   return { layout, layouts, handleLayoutChange, handleLayoutCommit } as const;

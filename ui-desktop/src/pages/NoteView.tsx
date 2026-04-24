@@ -11,8 +11,8 @@ import { useTranslation } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_NOTEVIEW_LAYOUT: Layout = [
-  { i: "notes-sidebar", x: 0, y: 0, w: 3, h: 12 },
-  { i: "notes-editor",  x: 3, y: 0, w: 9, h: 12 }
+  { i: "notes-sidebar", x: 0, y: 0, w: 3, h: 12, minW: 3, minH: 5 },
+  { i: "notes-editor",  x: 3, y: 0, w: 9, h: 12, minW: 5, minH: 6 }
 ];
 
 type GraphNoteRecord = {
@@ -251,7 +251,7 @@ export default function NoteView({ graph }: NoteViewProps) {
         compactType={null}
         isResizable={true}
         isDraggable={true}
-        resizeHandles={["se"]}
+        resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleNoteViewLayoutChange}
         onDragStop={handleNoteViewLayoutCommit}

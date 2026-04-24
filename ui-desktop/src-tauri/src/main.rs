@@ -318,6 +318,11 @@ fn import_raw_file(
 }
 
 #[tauri::command]
+fn read_blob_bytes(hash: String) -> Result<Vec<u8>, String> {
+    core_engine::blob_storage::read_blob(&hash)
+}
+
+#[tauri::command]
 fn update_note_node(
     window: Window,
     state: State<'_, EngineBridgeState>,
@@ -447,6 +452,7 @@ fn main() {
             commit_agent_analysis,
             create_note_node,
             import_raw_file,
+            read_blob_bytes,
             update_note_node,
             delete_node,
             link_nodes

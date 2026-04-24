@@ -10,8 +10,8 @@ import { useTranslation } from "../i18n";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_MODULESVIEW_LAYOUT: Layout = [
-  { i: "modules-overview", x: 0, y: 0, w: 12, h: 3 },
-  { i: "modules-catalog",  x: 0, y: 3, w: 12, h: 9 }
+  { i: "modules-overview", x: 0, y: 0, w: 12, h: 3, minW: 4, minH: 2 },
+  { i: "modules-catalog",  x: 0, y: 3, w: 12, h: 9, minW: 4, minH: 5 }
 ];
 
 type ModuleRecord = PluginManifest & {
@@ -98,7 +98,7 @@ export default function ModulesView() {
         compactType={null}
         isResizable={true}
         isDraggable={true}
-        resizeHandles={["se"]}
+        resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
         draggableHandle=".grid-drag-handle"
         onLayoutChange={handleModulesLayoutChange}
         onDragStop={handleModulesLayoutCommit}
