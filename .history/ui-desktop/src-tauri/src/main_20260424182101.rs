@@ -493,7 +493,6 @@ fn main() {
             let db_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.labflow_index.db");
             let conn = core_engine::db::init_db(&db_path)
                 .map_err(|err| format!("failed to initialize sqlite index db: {err}"))?;
-            core_engine::background_worker::spawn_alignment_daemon(db_path.clone());
             app.manage(DbState {
                 conn: Mutex::new(conn),
             });

@@ -6,7 +6,6 @@ pub mod data_ingestion;
 pub mod blob_storage;
 pub mod plugin_manager;
 pub mod db;
-pub mod background_worker;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
