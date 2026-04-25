@@ -272,7 +272,7 @@ function MetadataEditModal({ target, onClose, onSaved }: MetadataEditModalProps)
   );
 }
 
-export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewProps) {
+export default function AssetHubView({ graph, onRefresh }: AssetHubViewProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [files, setFiles] = useState<any[]>([]);
@@ -346,14 +346,7 @@ export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewP
           <button type="button" className="primary-button asset-hub-import-button" onClick={() => void handleImport()} disabled={importing}>
             {importing ? t("assetHub.importing") : t("assetHub.import")}
           </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => {
-              void fetchFiles();
-              void onRefresh();
-            }}
-          >
+          <button type="button" className="ghost-button" onClick={() => void onRefresh()}>
             {t("assetHub.refresh")}
           </button>
         </div>
