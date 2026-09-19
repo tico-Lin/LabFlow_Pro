@@ -1,0 +1,407 @@
+2026-09-19 15:13:20,007 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:13:20,129 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:13:20,141 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:13:20,144 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:13:20,144 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:13:20,146 [ERROR] labflow.plugins.manager: 載入插件檔案 D:\tico.lin\Desktop\org\LabFlow_Pro\plugins_example\baseline_plugin.py 時發生錯誤: Protocols with non-method members don't support issubclass()
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\plugins\manager.py", line 59, in load_plugins
+    if obj.__module__ == module_name and issubclass(obj, Plugin):
+                                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tico.lin\AppData\Local\Programs\Python\Python312\Lib\typing.py", line 1894, in __subclasscheck__
+    raise TypeError(
+TypeError: Protocols with non-method members don't support issubclass()
+2026-09-19 15:13:20,229 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:13:20,246 [ERROR] __main__: MainWindow load failed: t() takes 1 positional argument but 2 were given
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\app.py", line 106, in main
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\main_window.py", line 40, in __init__
+    self._init_ui()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\main_window.py", line 65, in _init_ui
+    self.project_explorer = ProjectExplorer(self.dock_project)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\widgets\project_explorer.py", line 34, in __init__
+    self._init_actions()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\widgets\project_explorer.py", line 46, in _init_actions
+    self.retranslate_ui()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\widgets\project_explorer.py", line 50, in retranslate_ui
+    self.action_rename.setText(t("action_rename", "重新命名"))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: t() takes 1 positional argument but 2 were given
+2026-09-19 15:15:33,197 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:15:33,314 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:15:33,339 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:15:33,341 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:15:33,341 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:15:33,343 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:15:33,430 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:15:33,448 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:15:33,448 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:15:33,448 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:15:33,531 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:15:33,548 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:15:33,548 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:15:33,549 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:15:33,550 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:15:33,550 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:15:33,550 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:15:33,550 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:15:33,550 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 15:15:33,731 [ERROR] __main__: MainWindow load failed: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\app.py", line 113, in main
+    window.show()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  [Previous line repeated 1 more time]
+NotImplementedError: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+2026-09-19 15:16:55,765 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:16:55,899 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:16:55,909 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:16:55,913 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:16:55,913 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:16:55,914 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:16:56,002 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:16:56,014 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:16:56,014 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:16:56,014 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:16:56,034 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:16:56,035 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:16:56,036 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:16:56,037 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:16:56,038 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:16:56,038 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:16:56,038 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:16:56,038 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:16:56,038 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 15:16:56,181 [ERROR] __main__: MainWindow load failed: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\app.py", line 113, in main
+    window.show()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 132, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  [Previous line repeated 1 more time]
+NotImplementedError: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+2026-09-19 15:17:29,648 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:17:29,765 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:17:29,776 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:17:29,779 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:17:29,779 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:17:29,780 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:17:29,865 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:17:29,875 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:17:29,875 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:17:29,875 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:17:29,887 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:17:29,897 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:17:29,898 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:17:29,898 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:17:29,898 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:17:29,898 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:17:29,899 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:17:29,899 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 15:17:30,050 [ERROR] __main__: MainWindow load failed: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\app.py", line 113, in main
+    window.show()
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 135, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 135, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\models\hdf5_tree_model.py", line 135, in columnCount
+    if parent.isValid():
+       ^^^^^^^^^^^^^^^^
+  [Previous line repeated 1 more time]
+NotImplementedError: Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): Error calling Python override of QAbstractItemModel::columnCount(): pure virtual method 'QAbstractItemModel.rowCount' not implemented.
+2026-09-19 15:19:01,581 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:19:01,699 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:19:01,710 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:19:01,711 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:19:01,711 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:19:01,714 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:19:01,799 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:19:01,814 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:19:01,814 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:19:01,814 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:19:01,835 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:19:01,837 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:19:01,837 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:19:01,838 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:19:01,839 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:19:01,839 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:19:01,839 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:19:01,839 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:19:01,839 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 15:19:01,982 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:19:01,984 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:19:01,985 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:19:01,985 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:19:01,985 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:19:01,985 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:19:01,992 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:19:01,992 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:19:01,996 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:19:01,997 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:34:40,068 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:34:40,225 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:34:40,237 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:34:40,239 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:34:40,239 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:34:40,240 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:34:40,345 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:34:40,349 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:34:40,349 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:34:40,349 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:34:40,377 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:34:40,379 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:34:40,380 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:34:40,381 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:34:40,381 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:34:40,381 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:34:40,382 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:34:40,382 [ERROR] __main__: MainWindow load failed: 'Kernel' object has no attribute 'get_data_store'
+Traceback (most recent call last):
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\app.py", line 107, in main
+    window.setup(kernel)
+  File "D:\tico.lin\Desktop\org\LabFlow_Pro\src\labflow\ui\main_window.py", line 135, in setup
+    self.project_explorer._tree_model.update_data(self._kernel.get_data_store())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Kernel' object has no attribute 'get_data_store'
+2026-09-19 15:35:57,231 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 15:35:57,386 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 15:35:57,398 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 15:35:57,400 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 15:35:57,400 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 15:35:57,401 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 15:35:57,490 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 15:35:57,494 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 15:35:57,494 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 15:35:57,494 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 15:35:57,530 [WARNING] labflow.ui.widgets.python_console: 無法連接 Translator: 'PySide6.QtCore.Signal' object has no attribute 'connect'
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 15:35:57,531 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 15:35:57,532 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 15:35:57,532 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 15:35:57,532 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 15:35:57,532 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 15:35:57,532 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 15:35:57,534 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 15:35:57,534 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 15:35:57,687 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:35:57,689 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:35:57,689 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:35:57,690 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:35:57,690 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:35:57,690 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:35:57,698 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:35:57,699 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 15:35:57,703 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 15:35:57,703 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:02:46,754 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 16:02:46,906 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 16:02:46,918 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 16:02:46,919 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 16:02:46,919 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 16:02:46,920 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 16:02:47,002 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 16:02:47,006 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 16:02:47,006 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 16:02:47,006 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 16:02:47,028 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.input_placeholder
+2026-09-19 16:02:47,028 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.clear_output
+2026-09-19 16:02:47,029 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 16:02:47,029 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 16:02:47,030 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 16:02:47,031 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 16:02:47,031 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 16:02:47,031 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 16:02:47,031 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 16:02:47,031 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 16:02:47,032 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 16:02:47,184 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:02:47,185 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:02:47,185 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:02:47,185 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:02:47,185 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:02:47,185 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:02:47,192 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:02:47,193 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:02:47,196 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:02:47,196 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:07:51,578 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 16:07:58,886 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 16:07:58,898 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 16:07:58,911 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 16:07:58,912 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 16:07:58,914 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 16:07:59,363 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 16:07:59,538 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 16:07:59,538 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 16:07:59,538 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 16:07:59,564 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.input_placeholder
+2026-09-19 16:07:59,564 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.clear_output
+2026-09-19 16:07:59,567 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 16:07:59,568 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 16:07:59,569 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 16:07:59,570 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 16:07:59,570 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 16:07:59,570 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 16:07:59,570 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 16:07:59,571 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 16:07:59,571 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 16:07:59,747 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:07:59,747 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:07:59,747 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:07:59,747 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:07:59,747 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:07:59,748 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:07:59,755 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:07:59,755 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:07:59,760 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:07:59,761 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:12:03,318 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 16:12:03,466 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 16:12:03,481 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 16:12:03,482 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 16:12:03,482 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 16:12:03,483 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 16:12:03,579 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 16:12:03,584 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_rename
+2026-09-19 16:12:03,584 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_delete
+2026-09-19 16:12:03,584 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action_properties
+2026-09-19 16:12:03,608 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.input_placeholder
+2026-09-19 16:12:03,608 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.clear_output
+2026-09-19 16:12:03,609 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.text
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.new.tooltip
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.text
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.open.tooltip
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.text
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: action.save.tooltip
+2026-09-19 16:12:03,610 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 16:12:03,612 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 16:12:03,612 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 16:12:03,612 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 16:12:03,612 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 16:12:03,613 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 16:12:03,613 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 16:12:03,766 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:12:03,767 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:12:03,767 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:12:03,767 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:12:03,767 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:12:03,768 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:12:03,774 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:12:03,774 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:12:03,777 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:12:03,778 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:14:24,667 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 16:14:24,831 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 16:14:24,843 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 16:14:24,844 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 16:14:24,844 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 16:14:24,845 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 16:14:24,929 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 16:14:24,954 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.input_placeholder
+2026-09-19 16:14:24,955 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: console.clear_output
+2026-09-19 16:14:24,955 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: toolbar.main.title
+2026-09-19 16:14:24,955 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: menu.file.new_project
+2026-09-19 16:14:24,956 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: menu.file.open_project
+2026-09-19 16:14:24,956 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: menu.file.save_project
+2026-09-19 16:14:24,956 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: statusbar.ready
+2026-09-19 16:14:24,957 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: window.main.title
+2026-09-19 16:14:24,957 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.project_explorer.title
+2026-09-19 16:14:24,957 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: dock.console.title
+2026-09-19 16:14:24,957 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 16:14:24,957 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 16:14:24,958 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 16:14:25,108 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:14:25,109 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:14:25,109 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:14:25,109 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:14:25,109 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:14:25,109 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:14:25,117 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:14:25,117 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:14:25,120 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:14:25,120 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:26:57,866 [INFO] __main__: Starting LabFlow Pro...
+2026-09-19 16:26:58,027 [INFO] labflow.engine.registry: 自動探索引擎計算函式...
+2026-09-19 16:26:58,039 [INFO] labflow.core.kernel: LabFlow Pro 微內核啟動完成。
+2026-09-19 16:26:58,040 [INFO] labflow.i18n.translator: 切換語言: en_US -> zh_TW
+2026-09-19 16:26:58,041 [INFO] labflow.engine.dispatcher: ComputeDispatcher 已初始化，工作執行緒數: 4
+2026-09-19 16:26:58,042 [INFO] labflow.plugins.manager: 成功載入插件: Baseline Subtraction Demo (v1.0.0)
+2026-09-19 16:26:58,128 [INFO] labflow.api.context: LabFlowContext 初始化完成。
+2026-09-19 16:26:58,157 [INFO] labflow.ui.main_window: MainWindow initialized.
+2026-09-19 16:26:58,157 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: project_root
+2026-09-19 16:26:58,176 [INFO] labflow.ui.widgets.python_console: Python 控制台環境變數已更新。
+2026-09-19 16:26:58,333 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:26:58,334 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:26:58,334 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:26:58,334 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:26:58,335 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:26:58,335 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:26:58,342 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:26:58,343 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type
+2026-09-19 16:26:58,346 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: name
+2026-09-19 16:26:58,346 [WARNING] labflow.i18n.translator: 找不到翻譯鍵值: type

@@ -1,0 +1,22 @@
+[app]
+locale = "zh_TW"
+theme = "light"
+recent_files_max = 10
+
+[data]
+chunk_size = 10000
+compression = "gzip"
+compression_level = 4
+
+[performance]
+auto_save_interval = 300
+max_undo_steps = 50
+lazy_load_threshold = 100000
+
+[plugins]
+dirs = ["plugins"]
+auto_load = true
+
+[logging]
+level = "INFO"
+file = "labflow.log"

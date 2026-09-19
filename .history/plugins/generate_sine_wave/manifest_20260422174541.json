@@ -1,0 +1,22 @@
+{
+  "id": "generate_sine_wave",
+  "name": "Generate Sine Wave",
+  "description": "Generate synthetic sine-wave x/y data for chart previews.",
+  "engine": "python",
+  "execute_cmd": ["python", "main.py"],
+  "supported_formats": ["generic", "cv", "xrd"],
+  "parameters": [
+    {
+      "key": "frequency",
+      "name": "Frequency",
+      "type": "number",
+      "defaultValue": 1.0
+    },
+    {
+      "key": "amplitude",
+      "name": "Amplitude",
+      "type": "number",
+      "defaultValue": 1.0
+    }
+  ]
+}

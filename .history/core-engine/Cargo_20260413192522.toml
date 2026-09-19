@@ -1,0 +1,23 @@
+[package]
+name = "core-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core engine: pointer arithmetic and binary sandbox I/O"
+
+[lib]
+name = "core_engine"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+prost = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

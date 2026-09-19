@@ -1,0 +1,19 @@
+[package]
+name = "ui-desktop"
+version = "0.1.0"
+description = "LabFlow cross-platform desktop shell"
+authors = ["LabFlow Contributors"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tauri = { version = "2", features = [] }
+core-engine = { path = "../../core-engine" }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
