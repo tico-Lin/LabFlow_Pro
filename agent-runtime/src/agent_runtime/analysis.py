@@ -129,3 +129,21 @@ def run_module(module_id: str, params_str: str, data_str: str) -> str:
         return json.dumps(result)
 
     raise ValueError(f"unknown analysis module: {module_id}")
+
+class AgentEventStreamClient:
+    """gRPC Bidirectional stream stub for UI events and Analysis results."""
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        # In real scenario: self.channel = grpc.insecure_channel(...)
+        # self.stub = labflow_pb2_grpc.AgentServiceStub(self.channel)
+        
+    def stream_events(self, request_iterator):
+        """Mock bidirectional stream processing."""
+        # return self.stub.AgentEventStream(request_iterator)
+        for req in request_iterator:
+            yield {
+                "session_id": self.session_id,
+                "response_type": "ACK_ANALYSIS",
+                "payload": b'{}'
+            }
+

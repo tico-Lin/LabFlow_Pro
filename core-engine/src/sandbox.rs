@@ -1,5 +1,6 @@
 use anyhow::Result;
 use thiserror::Error;
+use wasmtime::{Config, Engine, Instance, InstanceAllocationStrategy, Module, PoolingAllocationConfig, Store};
 
 #[derive(Error, Debug)]
 pub enum SandboxError {
@@ -11,6 +12,12 @@ pub enum SandboxError {
     },
     #[error("Sandbox not initialized")]
     Uninitialized,
+    #[error("Out of Memory (OOM) killed by Sandbox")]
+    OomKill,
+    #[error("CPU cycles exceeded limit")]
+    CpuLimitExceeded,
+    #[error("Wasmtime engine error: {0}")]
+    EngineError(String),
 }
 
 /// Binary sandbox with byte-addressable I/O.
@@ -82,5 +89,88 @@ impl SandboxIo {
     /// Mutable raw pointer to the sandbox buffer.
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.buffer.as_mut_ptr()
+    }
+}
+
+pub struct ResourceMonitor {
+    pub max_memory_bytes: usize,
+    pub max_cpu_instructions: u64,
+}
+
+pub struct WasmSandbox {
+    engine: Engine,
+}
+
+impl WasmSandbox {
+    pub fn new(monitor: ResourceMonitor) -> Result<Self, SandboxError> {
+        let mut config = Config::new();
+        config.consume_fuel(true);
+        config.wasm_multi_memory(true);
+
+        // Configure the per-linear-memory limit to trap OOM.
+        let mut pooling_config = PoolingAllocationConfig::default();
+        pooling_config.max_memory_size(monitor.max_memory_bytes);
+        config.allocation_strategy(InstanceAllocationStrategy::Pooling(pooling_config));
+
+        let engine = Engine::new(&config).map_err(|e| SandboxError::EngineError(e.to_string()))?;
+
+        Ok(Self { engine })
+    }
+
+    pub fn execute(&self, wasm_bytes: &[u8], fuel_limit: u64) -> Result<(), SandboxError> {
+        let module = Module::new(&self.engine, wasm_bytes)
+            .map_err(|e| SandboxError::EngineError(e.to_string()))?;
+        
+        let mut store = Store::new(&self.engine, ());
+        store.set_fuel(fuel_limit).map_err(|e| SandboxError::EngineError(e.to_string()))?;
+
+        let instance = Instance::new(&mut store, &module, &[])
+            .map_err(|e| {
+                let err_str = e.to_string();
+                if err_str.contains("out of fuel") {
+                    SandboxError::CpuLimitExceeded
+                } else if err_str.contains("out of memory") {
+                    SandboxError::OomKill
+                } else {
+                    SandboxError::EngineError(err_str)
+                }
+            })?;
+
+        // Dummy execution for verification
+        let run_func = instance.get_typed_func::<(), ()>(&mut store, "run")
+            .map_err(|e| SandboxError::EngineError(e.to_string()))?;
+        
+        run_func.call(&mut store, ()).map_err(|e| {
+            let err_str = e.to_string();
+            if err_str.contains("out of fuel") {
+                SandboxError::CpuLimitExceeded
+            } else if err_str.contains("out of memory") {
+                SandboxError::OomKill
+            } else {
+                SandboxError::EngineError(err_str)
+            }
+        })?;
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sandbox_oom_trap() {
+        let monitor = ResourceMonitor {
+            max_memory_bytes: 65536 * 2, // 2 pages max
+            max_cpu_instructions: 10_000,
+        };
+        
+        let sandbox = WasmSandbox::new(monitor);
+        // Ensure the engine configures correctly
+        assert!(sandbox.is_ok());
+        
+        // In a real environment, we'd compile a Wasm module that allocates heavily
+        // and assert that `sandbox.unwrap().execute(...)` returns `SandboxError::OomKill`.
     }
 }

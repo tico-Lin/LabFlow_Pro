@@ -20,6 +20,7 @@ thiserror = { workspace = true }
 tracing   = { workspace = true }
 sha2 = "0.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
+wasmtime = "22.0.0"
 
 [dev-dependencies]
 tokio = { workspace = true }

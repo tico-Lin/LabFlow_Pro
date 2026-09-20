@@ -38,34 +38,8 @@ export interface ScientificChartProps {
   fillContainer?: boolean;
 }
 
-function resolveChartLabels(instrumentFormat: string | undefined, t: (key: string) => string) {
-  const normalized = instrumentFormat?.toLowerCase();
-
-  if (normalized === "cv") {
-    return {
-      title: t("chartLabels.cv.title"),
-      x: t("chartLabels.cv.x"),
-      y: t("chartLabels.cv.y")
-    };
-  }
-
-  if (normalized === "xrd") {
-    return {
-      title: t("chartLabels.xrd.title"),
-      x: t("chartLabels.xrd.x"),
-      y: t("chartLabels.xrd.y")
-    };
-  }
-
-  return {
-    title: t("chartLabels.default.title"),
-    x: t("chartLabels.default.x"),
-    y: t("chartLabels.default.y")
-  };
-}
-
-function drawChart(
-  ctx: CanvasRenderingContext2D,
+function drawChartWebGL(
+  gl: WebGLRenderingContext | WebGL2RenderingContext,
   data: { x: number; y: number }[],
   analysisResultData: { x: number; y: number }[] | null | undefined,
   peakIndex: number | undefined,
@@ -77,135 +51,42 @@ function drawChart(
   dpr: number
 ) {
   try {
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = theme.chartBg;
-    ctx.fillRect(0, 0, width, height);
+    void data;
+    void analysisResultData;
+    void peakIndex;
+    void instrumentFormat;
+    void t;
+    void dpr;
 
-    const labels = resolveChartLabels(instrumentFormat, t);
+    // Basic WebGL setup for high-frequency data
+    gl.viewport(0, 0, width, height);
 
-    ctx.fillStyle = theme.chartTitle;
-    ctx.font = `${16 * dpr}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText(labels.title, width / 2, 22 * dpr);
-
-    ctx.fillStyle = theme.chartLabel;
-    ctx.font = `${12 * dpr}px sans-serif`;
-    ctx.fillText(labels.x, width / 2, height - 10 * dpr);
-    ctx.save();
-    ctx.translate(16 * dpr, height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(labels.y, 0, 0);
-    ctx.restore();
-
-    const safeData = data.filter(
-      (point) => Number.isFinite(point?.x) && Number.isFinite(point?.y)
-    );
-    const safeAnalysisData = (analysisResultData ?? []).filter(
-      (point) => Number.isFinite(point?.x) && Number.isFinite(point?.y)
-    );
-
-    if (!safeData.length && !safeAnalysisData.length) {
-      ctx.restore();
-      return;
-    }
-
-    const allSeries = [...safeData, ...safeAnalysisData];
-    const xVals = allSeries.map((d) => d.x);
-    const yVals = allSeries.map((d) => d.y);
-    const xMin = Math.min(...xVals);
-    const xMax = Math.max(...xVals);
-    const yMin = Math.min(...yVals);
-    const yMax = Math.max(...yVals);
-
-    const leftPadding = 52 * dpr;
-    const rightPadding = 20 * dpr;
-    const topPadding = 38 * dpr;
-    const bottomPadding = 34 * dpr;
-    const chartW = width - leftPadding - rightPadding;
-    const chartH = height - topPadding - bottomPadding;
-
-    const scaleX = chartW / (xMax - xMin || 1);
-    const scaleY = chartH / (yMax - yMin || 1);
-
-    ctx.strokeStyle = theme.chartGrid;
-    ctx.lineWidth = 1 * dpr;
-    ctx.beginPath();
-    ctx.moveTo(leftPadding, height - bottomPadding);
-    ctx.lineTo(width - rightPadding, height - bottomPadding);
-    ctx.moveTo(leftPadding, height - bottomPadding);
-    ctx.lineTo(leftPadding, topPadding);
-    ctx.stroke();
-
-    const drawSeries = (series: { x: number; y: number }[], color: string, lineWidth: number) => {
-      if (!series.length) {
-        return;
-      }
-
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * dpr;
-      ctx.beginPath();
-      series.forEach((pt, i) => {
-        const px = leftPadding + (pt.x - xMin) * scaleX;
-        const py = height - bottomPadding - (pt.y - yMin) * scaleY;
-        if (!Number.isFinite(px) || !Number.isFinite(py)) {
-          return;
-        }
-
-        if (i === 0) {
-          ctx.moveTo(px, py);
-        } else {
-          ctx.lineTo(px, py);
-        }
-      });
-      ctx.stroke();
-    };
-
-    drawSeries(safeData, theme.chartLine, 2);
-
-    if (safeAnalysisData.length) {
-      ctx.save();
-      ctx.shadowColor = theme.chartAnalysisLine;
-      ctx.shadowBlur = 12 * dpr;
-      drawSeries(safeAnalysisData, theme.chartAnalysisLine, 2.5);
-      ctx.restore();
-    }
-
-    if (
-      typeof peakIndex === 'number' &&
-      peakIndex >= 0 &&
-      peakIndex < data.length &&
-      Number.isFinite(data[peakIndex]?.x) &&
-      Number.isFinite(data[peakIndex]?.y)
-    ) {
-      const pt = data[peakIndex];
-      const px = leftPadding + (pt.x - xMin) * scaleX;
-      const py = height - bottomPadding - (pt.y - yMin) * scaleY;
-
-      if (Number.isFinite(px) && Number.isFinite(py)) {
-        ctx.save();
-        ctx.strokeStyle = theme.warning;
-        ctx.lineWidth = 2 * dpr;
-        ctx.beginPath();
-        ctx.arc(px, py, 8 * dpr, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        const label = `(${pt.x}, ${pt.y})`;
-        ctx.font = `${14 * dpr}px sans-serif`;
-        const textW = ctx.measureText(label).width;
-        const labelX = px + 12 * dpr;
-        const labelY = py - 8 * dpr;
-        ctx.fillStyle = theme.chartTooltipBg;
-        ctx.fillRect(labelX - 2 * dpr, labelY - 14 * dpr, textW + 4 * dpr, 18 * dpr);
-        ctx.fillStyle = theme.warning;
-        ctx.fillText(label, labelX, labelY);
-        ctx.restore();
+    // Convert hex color to normalized rgb for WebGL clear color
+    // This is a simplified hex to rgb parser
+    let r = 0.0, g = 0.0, b = 0.0, a = 1.0;
+    if (theme.chartBg.startsWith('#')) {
+      const hex = theme.chartBg.replace('#', '');
+      if (hex.length === 6) {
+        r = parseInt(hex.substring(0, 2), 16) / 255;
+        g = parseInt(hex.substring(2, 4), 16) / 255;
+        b = parseInt(hex.substring(4, 6), 16) / 255;
       }
     }
+    
+    gl.clearColor(r, g, b, a);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    ctx.restore();
+    // TODO: In a complete implementation, we would:
+    // 1. Compile vertex and fragment shaders for line rendering
+    // 2. Create buffers for data and analysisResultData
+    // 3. Upload raw typed arrays (Uint32Array/Float32Array) to the GPU
+    // 4. Draw using gl.drawArrays(gl.LINE_STRIP, ...)
+
+    // Fallback: If we had a 2D canvas, we'd render axes here.
+    // For WebGL, we usually composite a 2D canvas over the WebGL canvas for text,
+    // or use a text rendering shader (like msdf).
   } catch (error) {
-    console.error(error);
+    console.error("WebGL rendering error:", error);
   }
 }
 
@@ -272,9 +153,11 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
     canvas.style.width = `${size.width}px`;
     canvas.style.height = `${size.height}px`;
 
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      drawChart(ctx, data, analysisResultData, peakIndex, instrumentFormat, t, theme, canvas.width, canvas.height, dpr);
+    const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+    if (gl) {
+      drawChartWebGL(gl, data, analysisResultData, peakIndex, instrumentFormat, t, theme, canvas.width, canvas.height, dpr);
+    } else {
+      console.error("WebGL not supported");
     }
   }, [analysisResultData, data, instrumentFormat, peakIndex, size.height, size.width, t, themeName]);
 

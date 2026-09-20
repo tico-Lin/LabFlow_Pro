@@ -90,30 +90,44 @@ pub fn execute_plugin(
             })?;
         }
 
-        let mut cmd = Command::new(&plugin.execute_cmd[0]);
-        if plugin.execute_cmd.len() > 1 {
-            cmd.args(&plugin.execute_cmd[1..]);
-        }
-        if !plugin.plugin_dir.as_os_str().is_empty() {
-            cmd.current_dir(&plugin.plugin_dir);
-        }
-        cmd.arg(&sandbox_dir);
-
-        let output = cmd
-            .output()
-            .map_err(|err| format!("failed to execute plugin '{}': {err}", plugin.id))?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            let detail = if !stderr.is_empty() {
-                stderr
-            } else if !stdout.is_empty() {
-                stdout
-            } else {
-                "plugin process exited with failure and no output".to_string()
+        if plugin.engine == "wasm" {
+            let wasm_file = plugin.plugin_dir.join(&plugin.execute_cmd[0]);
+            let wasm_bytes = fs::read(&wasm_file).map_err(|e| format!("failed to read wasm file: {e}"))?;
+            
+            let monitor = crate::sandbox::ResourceMonitor {
+                max_memory_bytes: 512 * 1024 * 1024, // 512 MB
+                max_cpu_instructions: 1_000_000_000, // 1 Billion instructions
             };
-            return Err(format!("plugin '{}' execution failed: {detail}", plugin.id));
+            let sandbox = crate::sandbox::WasmSandbox::new(monitor).map_err(|e| e.to_string())?;
+            
+            // Execute in Wasm sandbox
+            sandbox.execute(&wasm_bytes, 1_000_000_000).map_err(|e| e.to_string())?;
+        } else {
+            let mut cmd = Command::new(&plugin.execute_cmd[0]);
+            if plugin.execute_cmd.len() > 1 {
+                cmd.args(&plugin.execute_cmd[1..]);
+            }
+            if !plugin.plugin_dir.as_os_str().is_empty() {
+                cmd.current_dir(&plugin.plugin_dir);
+            }
+            cmd.arg(&sandbox_dir);
+
+            let output = cmd
+                .output()
+                .map_err(|err| format!("failed to execute plugin '{}': {err}", plugin.id))?;
+
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                let detail = if !stderr.is_empty() {
+                    stderr
+                } else if !stdout.is_empty() {
+                    stdout
+                } else {
+                    "plugin process exited with failure and no output".to_string()
+                };
+                return Err(format!("plugin '{}' execution failed: {detail}", plugin.id));
+            }
         }
 
         let output_path = sandbox_dir.join("output.json");

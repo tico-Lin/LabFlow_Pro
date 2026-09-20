@@ -189,6 +189,12 @@ pub enum OpKind {
     DeleteLink {
         edge_id: EdgeId,
     },
+
+    /// Delta mutation for efficient scientific data updates (vectors/matrices)
+    DeltaMutation {
+        node_id: NodeId,
+        delta_data: Vec<u8>,
+    },
 }
 
 /// A single CRDT operation with its causal metadata.
@@ -545,6 +551,20 @@ fn apply_op(
                 wip.last_del = Some((op.ts, op.peer, op.id));
             }
         }
+
+        OpKind::DeltaMutation { node_id, delta_data } => {
+            if state.deleted_nodes.contains(node_id) {
+                return;
+            }
+            if let Some(node) = state.nodes.get_mut(node_id) {
+                // Example compression/delta application:
+                // In a real scenario, this would apply diffs to vectors/matrices.
+                // We'll simulate it by appending a property to indicate the delta was applied.
+                node.payload.properties.insert(format!("delta_{}", op.id), format!("{:?}", delta_data));
+                node.winner_ts = op.ts;
+                node.winner_peer = op.peer;
+            }
+        }
     }
 }
 
@@ -798,6 +818,37 @@ mod tests {
     fn delete_link(edge_id: EdgeId, ts: u64, peer: PeerId) -> Operation {
         Operation::new(OpKind::DeleteLink { edge_id }, LamportTs(ts), peer)
     }
+
+    #[test]
+    fn test_delta_mutation_efficiency() {
+        let peer_a = fixed_peer(1);
+        let node_1 = fixed_node(1);
+        
+        // Initial insert
+        let op1 = insert(node_1, "Data Node", 1, peer_a);
+        
+        // Create 10,000 delta mutations to test CRDT convergence and compression simulation
+        let mut ops = vec![op1];
+        let mut clock = LamportClock::new();
+        clock.observe(LamportTs(1));
+        
+        for _ in 0..10_000 {
+            ops.push(Operation::new(
+                OpKind::DeltaMutation {
+                    node_id: node_1,
+                    delta_data: vec![0, 1, 2, 3],
+                },
+                clock.tick(),
+                peer_a,
+            ));
+        }
+        
+        let state = merge(&ops, &[]);
+        assert!(state.nodes.contains_key(&node_1));
+        // Verify final state has processed the deltas
+        assert_eq!(state.nodes[&node_1].winner_ts.0, 10_001);
+    }
+
 
     // ── Lamport Clock ─────────────────────────────────────────────────────────
 

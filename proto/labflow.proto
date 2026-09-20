@@ -85,4 +85,43 @@ service HostService {
 service AgentService {
   // Host → Agent: push a task
   rpc ExecuteTask(TaskRequest) returns (stream TaskResponse);
+
+  // Bidirectional stream for UI events and analysis results
+  rpc AgentEventStream(stream AgentEventRequest) returns (stream AgentEventResponse);
+}
+
+// ─── CRDT Trackable Structures ───────────────────────────────────────────────
+
+message ChartState {
+  string chart_id = 1;
+  string type = 2;
+  bytes data = 3; // Binary payload of chart data
+}
+
+message ChemicalStructure {
+  string structure_id = 1;
+  string format = 2; // e.g., "SMILES", "MOL"
+  string payload = 3;
+}
+
+message MarkdownAST {
+  string document_id = 1;
+  string root_node = 2; // JSON representation of the AST
+}
+
+message DeltaMutation {
+  string target_id = 1;
+  bytes delta_data = 2; // Optimized difference data for vectors/matrices
+}
+
+message AgentEventRequest {
+  string session_id = 1;
+  string event_type = 2; // e.g., "CANVAS_CLICK", "PARAMETER_CHANGE"
+  bytes payload = 3;
+}
+
+message AgentEventResponse {
+  string session_id = 1;
+  string response_type = 2; // e.g., "ANALYSIS_RESULT", "CODE_GENERATION"
+  bytes payload = 3;
 }
