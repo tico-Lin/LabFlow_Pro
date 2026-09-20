@@ -1,4 +1,4 @@
-pub mod sandbox;
+﻿pub mod sandbox;
 pub mod pointer;
 pub mod crdt;
 pub mod shadow;
@@ -215,3 +215,5 @@ fn core_engine(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<LabFlowCore>()?;
     Ok(())
 }
+
+pub mod markdown_ast;

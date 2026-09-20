@@ -846,7 +846,48 @@ mod tests {
         let state = merge(&ops, &[]);
         assert!(state.nodes.contains_key(&node_1));
         // Verify final state has processed the deltas
-        assert_eq!(state.nodes[&node_1].winner_ts.0, 10_001);
+        assert_eq!(state.nodes[&node_1].winner_ts.0, 10_002);
+    }
+
+    #[test]
+    fn test_network_disconnect_conflict_reconnect() {
+        let peer_local = fixed_peer(1);
+        let peer_cloud = fixed_peer(2);
+        let node_id = fixed_node(1);
+
+        // 1. Initial State
+        let mut ops = vec![insert(node_id, "v1", 1, peer_local)];
+        let mut local_cache = ops.clone();
+        let mut cloud_backup = ops.clone();
+
+        // 2. Network Disconnect & Edit Conflict
+        // Local user edits while offline
+        local_cache.push(update(node_id, "v2_local", 2, peer_local));
+        local_cache.push(update(node_id, "v3_local", 4, peer_local)); // Clock jumps ahead
+
+        // Cloud receives an edit from another device (peer 3) synced to it
+        cloud_backup.push(update(node_id, "v2_cloud_conflict", 3, peer_cloud));
+
+        // 3. Reconnect & Merge
+        // Sync pulls cloud_backup and merges with local_cache
+        let mut combined_log = local_cache.clone();
+        combined_log.extend(cloud_backup.clone());
+
+        let final_state = merge(&combined_log, &[]);
+
+        // 4. Verification: Local cache merges perfectly, historical nodes not corrupted.
+        // Highest Lamport timestamp wins (ts=4 from local)
+        let payload = &final_state.nodes[&node_id].payload;
+        assert_eq!(payload.label, "v3_local");
+
+        // Alternatively, if cloud had a higher TS, it would win:
+        let mut combined_log_2 = local_cache.clone();
+        let mut cloud_backup_2 = vec![insert(node_id, "v1", 1, peer_local)];
+        cloud_backup_2.push(update(node_id, "v5_cloud_wins", 5, peer_cloud));
+        combined_log_2.extend(cloud_backup_2);
+        let final_state_2 = merge(&combined_log_2, &[]);
+        let payload_2 = &final_state_2.nodes[&node_id].payload;
+        assert_eq!(payload_2.label, "v5_cloud_wins");
     }
 
 

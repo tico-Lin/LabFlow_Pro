@@ -262,6 +262,38 @@ pub fn ingest_ascii_data(ascii: &str, peer_id: PeerId) -> Vec<Operation> {
     )]
 }
 
+pub fn ingest_large_file(source_path: &std::path::Path, peer_id: PeerId) -> Result<Vec<Operation>, String> {
+    let mut clock = LamportClock::new();
+    
+    // Ingest the file using O(1) chunking in blob_storage
+    let blob_meta = crate::blob_storage::ingest_file(source_path)?;
+    
+    let payload_json = json!({
+        "instrument_format": "binary_blob",
+        "metadata": {
+            "original_name": blob_meta.original_name,
+            "size_bytes": blob_meta.size_bytes,
+            "hash": blob_meta.hash,
+        },
+        "data_ref": blob_meta.hash // pointer to blob, NOT the actual data
+    });
+
+    let mut payload = NodePayload::with_content(
+        format!("Large Dataset: {}", blob_meta.original_name), 
+        payload_json
+    );
+    payload.properties.insert("ingest_format".to_string(), "binary_blob".to_string());
+    
+    Ok(vec![Operation::new(
+        OpKind::InsertNode {
+            node_id: Uuid::new_v4(),
+            payload,
+        },
+        clock.tick(),
+        peer_id,
+    )])
+}
+
 #[cfg(test)]
 mod tests {
     use super::{detect_format, ingest_ascii_data, InstrumentFormat};
@@ -348,6 +380,36 @@ mod tests {
                 assert_eq!(payload_json["data"]["y"].as_array().map(Vec::len), Some(3));
             }
             other => panic!("expected insert node, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn ingest_large_file_controls_memory_and_creates_crdt_pointer() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        
+        let mut temp_file = NamedTempFile::new().expect("failed to create temp file");
+        let chunk = vec![0x42; 65536]; 
+        for _ in 0..80 { 
+            temp_file.write_all(&chunk).expect("failed to write chunk");
+        }
+        temp_file.flush().expect("flush failed");
+        
+        let peer_id = Uuid::new_v4();
+        let ops = super::ingest_large_file(temp_file.path(), peer_id).expect("ingest large file failed");
+        
+        assert_eq!(ops.len(), 1);
+        
+        match &ops[0].kind {
+            OpKind::InsertNode { payload, .. } => {
+                let payload_json = payload.content.clone().expect("content missing");
+                assert_eq!(payload_json["instrument_format"], "binary_blob");
+                assert_eq!(payload_json["metadata"]["size_bytes"], 5 * 1024 * 1024);
+                
+                assert!(payload_json.get("data_ref").is_some());
+                assert!(payload_json.get("data").is_none()); 
+            }
+            _ => panic!("Expected InsertNode"),
         }
     }
 }

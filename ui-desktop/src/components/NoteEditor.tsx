@@ -1,4 +1,5 @@
 import { useTranslation } from "../i18n";
+import RichMarkdownEditor from "./RichMarkdownEditor";
 
 type NoteEditorProps = {
   title: string;
@@ -44,12 +45,12 @@ export default function NoteEditor({
             placeholder={t("note.titlePlaceholder")}
           />
         </label>
-        <label className="note-editor-field">
+        <label className="note-editor-field" style={{ display: "block", marginTop: "1rem" }}>
           <span>{t("note.contentLabel")}</span>
-          <textarea
-            className="note-textarea"
+          <RichMarkdownEditor
             value={content}
-            onChange={(event) => onContentChange(event.target.value)}
+            onChange={onContentChange}
+            theme="dark"
             placeholder={t("note.contentPlaceholder")}
           />
         </label>

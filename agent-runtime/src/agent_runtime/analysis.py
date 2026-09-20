@@ -96,22 +96,22 @@ def get_available_modules() -> str:
     return json.dumps(modules)
 
 
+import numpy as np
+
 def find_max_peak(voltages: list[float], currents: list[float]) -> dict:
     """尋找 currents 中最大值的 index，並回傳對應的電壓與電流。"""
     if not currents or not voltages or len(currents) != len(voltages):
         raise ValueError("currents 和 voltages 必須為非空且長度相同的 list")
 
-    max_idx = 0
-    max_val = currents[0]
-    for i, current in enumerate(currents):
-        if current > max_val:
-            max_val = current
-            max_idx = i
+    # Use NumPy for C-level fast processing (O(N) time, zero-copy if possible)
+    currents_arr = np.array(currents)
+    max_idx = int(np.argmax(currents_arr))
+    max_val = float(currents_arr[max_idx])
 
     return {
         "index": max_idx,
         "voltage": voltages[max_idx],
-        "current": currents[max_idx],
+        "current": max_val,
     }
 
 
@@ -166,12 +166,17 @@ def run_module(module_id: str, params_str: str, data_str: str) -> str:
 
     raise ValueError(f"unknown analysis module: {module_id}")
 
+import grpc
+import labflow_pb2
+import labflow_pb2_grpc
+
 class AgentEventStreamClient:
     """gRPC Bidirectional stream stub for UI events and Analysis results."""
     def __init__(self, session_id: str):
         self.session_id = session_id
-        # In real scenario: self.channel = grpc.insecure_channel(...)
-        # self.stub = labflow_pb2_grpc.AgentServiceStub(self.channel)
+        # In real scenario: connect to host service
+        self.channel = grpc.insecure_channel('localhost:50051')
+        self.stub = labflow_pb2_grpc.AgentServiceStub(self.channel)
         
     def stream_events(self, request_iterator):
         """Mock bidirectional stream processing."""

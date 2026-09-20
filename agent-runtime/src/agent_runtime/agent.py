@@ -37,17 +37,40 @@ class Critic:
             
         return True, "Success"
 
+import grpc
+import labflow_pb2
+import labflow_pb2_grpc
+
 class Agent:
-    """Minimal agent stub; replace with full gRPC client."""
+    """Agent entry point connecting to HostService via gRPC."""
 
     def __init__(self, host: str = "localhost:50051") -> None:
         self.host = host
+        self.channel = None
+        self.stub = None
 
     async def run(self) -> None:
         log.info("agent starting", host=self.host)
-        # TODO: replace with real gRPC channel + stub
-        await asyncio.sleep(0)
+        self.channel = grpc.aio.insecure_channel(self.host)
+        self.stub = labflow_pb2_grpc.HostServiceStub(self.channel)
+        
+        # Simple ping/join to verify connection
+        try:
+            req = labflow_pb2.JoinRequest(session_id="agent-001", api_key="internal")
+            res = await self.stub.JoinSession(req)
+            log.info("agent joined", token=res.token)
+        except grpc.aio.AioRpcError as e:
+            log.error("agent failed to join", error=str(e))
+        
         log.info("agent ready")
+
+        # Keep alive
+        try:
+            while True:
+                await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            if self.channel:
+                await self.channel.close()
 
 
 def main() -> None:
