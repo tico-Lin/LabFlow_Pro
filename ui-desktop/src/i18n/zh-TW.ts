@@ -442,6 +442,12 @@ const zhTW = {
         items: ["L1 骨架", "L2 工具層", "L3 進階層", "IPC 健康度"]
       }
     }
+  },
+  // --- SEMANTIC SCANNER HOOK ---
+  // Antigravity Agent 將在此處自動注入掃描到的新 UI 翻譯。
+  // 除非需要解決語意衝突，否則請勿手動編輯此線以下的內容。
+  generated: {
+    // [Antigravity_Auto_Generated_Keys]
   }
 } as const;
 

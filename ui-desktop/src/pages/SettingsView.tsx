@@ -27,19 +27,10 @@ type SettingsViewProps = {
   onPinSidebarChange: (enabled: boolean) => void;
 };
 
-export default function SettingsView({
-  theme,
-  language,
-  startupPage,
-  autoSyncGraph,
-  pinSidebar,
-  onThemeChange,
-  onLanguageChange,
-  onStartupPageChange,
-  onAutoSyncGraphChange,
-  onPinSidebarChange
-}: SettingsViewProps) {
+// --- MVC Controller Layer ---
+export function useSettingsController() {
   const { t } = useTranslation();
+  
   const sectionRefs = {
     language: useRef<HTMLElement | null>(null),
     appearance: useRef<HTMLElement | null>(null),
@@ -47,8 +38,6 @@ export default function SettingsView({
     workspace: useRef<HTMLElement | null>(null),
     navigation: useRef<HTMLElement | null>(null)
   };
-  const { layouts: settingsLayouts, handleLayoutChange: handleSettingsLayoutChange } =
-    usePageGrid("settingsview-layout", DEFAULT_SETTINGSVIEW_LAYOUT);
 
   const sections = useMemo(
     () => [
@@ -98,6 +87,27 @@ export default function SettingsView({
     ],
     [t]
   );
+
+  return { t, sectionRefs, sections, startupPageOptions };
+}
+
+// --- MVC View Layer ---
+export default function SettingsView({
+  theme,
+  language,
+  startupPage,
+  autoSyncGraph,
+  pinSidebar,
+  onThemeChange,
+  onLanguageChange,
+  onStartupPageChange,
+  onAutoSyncGraphChange,
+  onPinSidebarChange
+}: SettingsViewProps) {
+  const { t, sectionRefs, sections, startupPageOptions } = useSettingsController();
+  
+  const { layouts: settingsLayouts, handleLayoutChange: handleSettingsLayoutChange } =
+    usePageGrid("settingsview-layout", DEFAULT_SETTINGSVIEW_LAYOUT);
 
   return (
     <section className="page-shell settings-page">

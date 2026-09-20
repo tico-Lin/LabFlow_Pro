@@ -54,6 +54,19 @@ export default function RichMarkdownEditor({ value, placeholder, theme, onChange
 
     editorRef.current = editor;
 
+    // Load the WASM module for high-performance rendering (Markdown + LaTeX)
+    const initWasmEngine = async () => {
+      try {
+        // Mock loading of WASM parser
+        console.log("Loading WASM LaTeX/Markdown engine...");
+        // const wasm = await import('wasm-latex-markdown');
+        // await wasm.init();
+      } catch (err) {
+        console.error("Failed to load WASM engine", err);
+      }
+    };
+    void initWasmEngine();
+
     return () => {
       editorRef.current = null;
       editor.destroy();

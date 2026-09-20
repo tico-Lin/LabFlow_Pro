@@ -442,6 +442,12 @@ const en = {
         items: ["L1 skeleton", "L2 tooling", "L3 advanced", "IPC health"]
       }
     }
+  },
+  // --- SEMANTIC SCANNER HOOK ---
+  // Antigravity Agent will auto-inject newly scanned UI translations here.
+  // DO NOT manually edit below this line unless resolving a semantic conflict.
+  generated: {
+    // [Antigravity_Auto_Generated_Keys]
   }
 } as const;
 

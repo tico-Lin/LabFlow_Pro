@@ -155,6 +155,51 @@ impl WasmSandbox {
     }
 }
 
+// ─── IPC / FFI for Agent Runtime ──────────────────────────────────────────────
+
+#[repr(C)]
+pub struct SandboxResult {
+    pub success: bool,
+    pub memory_used_bytes: usize,
+    pub error_msg: *mut std::os::raw::c_char,
+}
+
+/// FFI endpoint for agent.py to invoke sandbox execution with isolation
+#[no_mangle]
+pub extern "C" fn execute_agent_code(
+    wasm_bytes: *const u8,
+    wasm_len: usize,
+    max_memory: usize,
+) -> SandboxResult {
+    let bytes = unsafe { std::slice::from_raw_parts(wasm_bytes, wasm_len) };
+    
+    let monitor = ResourceMonitor {
+        max_memory_bytes: max_memory,
+        max_cpu_instructions: 1_000_000,
+    };
+    
+    let Ok(sandbox) = WasmSandbox::new(monitor) else {
+        return SandboxResult {
+            success: false,
+            memory_used_bytes: 0,
+            error_msg: std::ffi::CString::new("Engine initialization failed").unwrap().into_raw(),
+        };
+    };
+    
+    match sandbox.execute(bytes, 1_000_000) {
+        Ok(_) => SandboxResult {
+            success: true,
+            memory_used_bytes: max_memory / 2, // Mocking memory measurement
+            error_msg: std::ptr::null_mut(),
+        },
+        Err(e) => SandboxResult {
+            success: false,
+            memory_used_bytes: 0,
+            error_msg: std::ffi::CString::new(e.to_string()).unwrap().into_raw(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

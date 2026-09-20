@@ -1,0 +1,20 @@
+{
+  "id": "drive_oauth",
+  "name": "Cloud Drive Integrations",
+  "description": "OAuth2.0 logic for Google Drive and OneDrive file syncing.",
+  "engine": "wasm",
+  "execute_cmd": ["drive_sync.wasm"],
+  "supported_formats": ["*"],
+  "parameters": {
+    "provider": {
+      "type": "string",
+      "enum": ["google_drive", "onedrive"],
+      "description": "The cloud provider to authenticate with."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["auth", "sync_up", "sync_down"]
+    }
+  }
+}
+

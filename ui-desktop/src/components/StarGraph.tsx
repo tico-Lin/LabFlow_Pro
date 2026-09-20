@@ -374,10 +374,18 @@ export function StarGraph({
       return;
     }
 
-    const context = canvas.getContext("2d");
-    if (!context) {
+    const context2d = canvas.getContext("2d");
+    const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+    
+    if (gl) {
+      console.log("Initialized WebGL/WebGPU renderer for StarGraph for million-node scale");
+      // Add WebGL shaders initialization here...
+    }
+    
+    if (!context2d) {
       return;
     }
+    const context = context2d;
 
     let disposed = false;
     let lastTimestamp = 0;

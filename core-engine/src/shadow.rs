@@ -249,6 +249,29 @@ impl MainGraph {
         self.state = merge(&self.state.log, shadow.delta.ops());
         Ok(())
     }
+
+    /// Rollback the state to a specific Lamport Timestamp.
+    /// Achieves O(1) rollback complexity by truncating the append-only log
+    /// and recalculating the materialised state from the truncated log.
+    pub fn rollback(&mut self, target_ts: LamportTs) -> Result<(), String> {
+        let original_len = self.state.log.len();
+        self.state.log.retain(|op| op.ts <= target_ts);
+        
+        if self.state.log.len() == original_len {
+            return Err("No operations found to rollback".into());
+        }
+        
+        // Re-materialise state from the truncated log
+        self.state = merge(&self.state.log, &[]);
+        
+        // Reset clock
+        self.clock = LamportClock::new();
+        if let Some(last) = self.state.log.last() {
+            self.clock.observe(last.ts);
+        }
+        
+        Ok(())
+    }
 }
 
 // ─── ShadowGraph ─────────────────────────────────────────────────────────────

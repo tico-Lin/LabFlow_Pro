@@ -23,6 +23,14 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
             edge_type TEXT,
             PRIMARY KEY (source_id, target_id)
         );
+        
+        CREATE TABLE IF NOT EXISTS operations_log (
+            op_id TEXT PRIMARY KEY,
+            ts INTEGER NOT NULL,
+            peer_id TEXT NOT NULL,
+            payload BLOB NOT NULL
+        );
+
         "#,
     )?;
 

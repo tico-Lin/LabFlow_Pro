@@ -272,20 +272,13 @@ function MetadataEditModal({ target, onClose, onSaved }: MetadataEditModalProps)
   );
 }
 
-export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewProps) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+// --- MVC Controller Layer ---
+export function useAssetHubController(onRefresh: () => void | Promise<unknown>) {
   const [files, setFiles] = useState<any[]>([]);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
-  const {
-    layouts: assetHubLayouts,
-    handleLayoutChange: handleAssetHubLayoutChange,
-    handleLayoutCommit: handleAssetHubLayoutCommit
-  } =
-    usePageGrid("assethub-layout", DEFAULT_ASSETHUB_LAYOUT);
-
+  
   const fetchFiles = useCallback(async () => {
     const result = await invoke<any[]>("list_files", { offset: 0, limit: 50 });
     setFiles(Array.isArray(result) ? result : []);
@@ -305,17 +298,9 @@ export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewP
   const handleImport = async () => {
     setImporting(true);
     setError(null);
-
     try {
-      const selectedPath = await open({
-        multiple: false,
-        directory: false
-      });
-
-      if (!selectedPath || Array.isArray(selectedPath)) {
-        return;
-      }
-
+      const selectedPath = await open({ multiple: false, directory: false });
+      if (!selectedPath || Array.isArray(selectedPath)) return;
       await invoke<string>("import_raw_file", { sourcePath: selectedPath });
       await fetchFiles();
       await onRefresh();
@@ -325,6 +310,39 @@ export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewP
       setImporting(false);
     }
   };
+
+  return {
+    files,
+    importing,
+    error,
+    editTarget,
+    setEditTarget,
+    handleEditSaved,
+    handleImport,
+    fetchFiles
+  };
+}
+
+// --- MVC View Layer ---
+export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const {
+    files,
+    importing,
+    error,
+    editTarget,
+    setEditTarget,
+    handleEditSaved,
+    handleImport,
+    fetchFiles
+  } = useAssetHubController(onRefresh);
+
+  const {
+    layouts: assetHubLayouts,
+    handleLayoutChange: handleAssetHubLayoutChange,
+    handleLayoutCommit: handleAssetHubLayoutCommit
+  } = usePageGrid("assethub-layout", DEFAULT_ASSETHUB_LAYOUT);
 
   return (
     <section className="page-shell asset-hub-page">
@@ -444,7 +462,7 @@ export default function AssetHubView({ graph: _graph, onRefresh }: AssetHubViewP
                       {file.tags.length > 0 ? (
                         <div className="asset-file-tags" aria-label={t("assetHub.fileCard.tagsAriaLabel")}>
                           {file.tags.map((tag) => (
-                            <span key={tag} className="tag-badge tag-badge--sm">
+                             <span key={tag} className="tag-badge tag-badge--sm">
                               {tag}
                             </span>
                           ))}
