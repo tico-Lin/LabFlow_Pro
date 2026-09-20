@@ -41,12 +41,18 @@ func (s *Server) Run() error {
 		}
 	}()
 
+	// Start cloud sync (Mocking OAuth tokens for now)
+	syncer := NewCloudSyncer("GoogleDrive", "mock-oauth-token-123", 1*time.Minute)
+	syncer.Start()
+
 	select {
 	case <-ctx.Done():
 		slog.Info("shutting down gracefully")
+		syncer.Stop()
 		s.grpc.GracefulStop()
 		return nil
 	case err := <-errCh:
+		syncer.Stop()
 		return err
 	}
 }

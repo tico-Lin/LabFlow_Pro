@@ -249,6 +249,11 @@ class AgentServiceStub:
                 request_serializer=labflow__pb2.TaskRequest.SerializeToString,
                 response_deserializer=labflow__pb2.TaskResponse.FromString,
                 _registered_method=True)
+        self.ExecuteCode = channel.unary_unary(
+                '/labflow.v1.AgentService/ExecuteCode',
+                request_serializer=labflow__pb2.ExecuteCodeRequest.SerializeToString,
+                response_deserializer=labflow__pb2.ExecuteCodeResponse.FromString,
+                _registered_method=True)
         self.AgentEventStream = channel.stream_stream(
                 '/labflow.v1.AgentService/AgentEventStream',
                 request_serializer=labflow__pb2.AgentEventRequest.SerializeToString,
@@ -261,6 +266,13 @@ class AgentServiceServicer:
 
     def ExecuteTask(self, request, context):
         """Host → Agent: push a task
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteCode(self, request, context):
+        """Host → Agent: push code for isolated execution
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -280,6 +292,11 @@ def add_AgentServiceServicer_to_server(servicer, server):
                     servicer.ExecuteTask,
                     request_deserializer=labflow__pb2.TaskRequest.FromString,
                     response_serializer=labflow__pb2.TaskResponse.SerializeToString,
+            ),
+            'ExecuteCode': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteCode,
+                    request_deserializer=labflow__pb2.ExecuteCodeRequest.FromString,
+                    response_serializer=labflow__pb2.ExecuteCodeResponse.SerializeToString,
             ),
             'AgentEventStream': grpc.stream_stream_rpc_method_handler(
                     servicer.AgentEventStream,
@@ -314,6 +331,33 @@ class AgentService:
             '/labflow.v1.AgentService/ExecuteTask',
             labflow__pb2.TaskRequest.SerializeToString,
             labflow__pb2.TaskResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExecuteCode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/labflow.v1.AgentService/ExecuteCode',
+            labflow__pb2.ExecuteCodeRequest.SerializeToString,
+            labflow__pb2.ExecuteCodeResponse.FromString,
             options,
             channel_credentials,
             insecure,

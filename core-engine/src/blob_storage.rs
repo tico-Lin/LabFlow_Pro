@@ -1,6 +1,6 @@
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
-use std::io::{self, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,15 +38,18 @@ pub fn ingest_file(source_path: &Path) -> Result<BlobMetadata, String> {
     let mut buffer = [0u8; 65536]; // 64KB chunk
     let mut size_bytes = 0;
 
+    let mut encoder = lz4_flex::frame::FrameEncoder::new(&mut temp_file);
+
     loop {
         let n = source_file.read(&mut buffer).map_err(|err| format!("failed to read source: {err}"))?;
         if n == 0 {
             break;
         }
         hasher.update(&buffer[..n]);
-        temp_file.write_all(&buffer[..n]).map_err(|err| format!("failed to write temp: {err}"))?;
+        encoder.write_all(&buffer[..n]).map_err(|err| format!("failed to compress temp: {err}"))?;
         size_bytes += n as u64;
     }
+    encoder.finish().map_err(|err| format!("failed to finish compression: {err}"))?;
 
     let hash = bytes_to_hex(hasher.finalize().as_slice());
 
@@ -132,7 +135,11 @@ pub fn get_blob_path(hash: &str) -> Result<PathBuf, String> {
 
 pub fn read_blob(hash: &str) -> Result<Vec<u8>, String> {
     let path = get_blob_path(hash)?;
-    fs::read(&path).map_err(|err| format!("failed to read blob file {}: {err}", path.display()))
+    let file = File::open(&path).map_err(|err| format!("failed to open blob file {}: {err}", path.display()))?;
+    let mut decoder = lz4_flex::frame::FrameDecoder::new(file);
+    let mut data = Vec::new();
+    decoder.read_to_end(&mut data).map_err(|err| format!("failed to decompress blob file {}: {err}", path.display()))?;
+    Ok(data)
 }
 
 fn ensure_blob_dir() -> Result<PathBuf, String> {

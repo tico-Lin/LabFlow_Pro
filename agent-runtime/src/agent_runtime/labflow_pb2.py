@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rlabflow.proto\x12\nlabflow.v1\"V\n\x07Session\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x11\n\towner_key\x18\x02 \x01(\t\x12\x10\n\x08peer_ids\x18\x03 \x03(\t\x12\x12\n\ncreated_at\x18\x04 \x01(\x03\"2\n\x0bJoinRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0f\n\x07\x61pi_key\x18\x02 \x01(\t\"@\n\x0cJoinResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\r\n\x05token\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"U\n\x0bTaskRequest\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\t\x12\x10\n\x08priority\x18\x04 \x01(\x05\"f\n\x0cTaskResponse\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\x0e\n\x06result\x18\x02 \x01(\t\x12&\n\x06status\x18\x03 \x01(\x0e\x32\x16.labflow.v1.TaskStatus\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"G\n\x13SandboxWriteRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"F\n\x12SandboxReadRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x04\x12\x0c\n\x04size\x18\x03 \x01(\r\">\n\x13SandboxReadResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\n\n\x02ok\x18\x02 \x01(\x08\x12\r\n\x05\x65rror\x18\x03 \x01(\t\":\n\nChartState\x12\x10\n\x08\x63hart_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"J\n\x11\x43hemicalStructure\x12\x14\n\x0cstructure_id\x18\x01 \x01(\t\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\t\"5\n\x0bMarkdownAST\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\t\x12\x11\n\troot_node\x18\x02 \x01(\t\"6\n\rDeltaMutation\x12\x11\n\ttarget_id\x18\x01 \x01(\t\x12\x12\n\ndelta_data\x18\x02 \x01(\x0c\"L\n\x11\x41gentEventRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\nevent_type\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c\"P\n\x12\x41gentEventResponse\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x15\n\rresponse_type\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c*\x89\x01\n\nTaskStatus\x12\x1b\n\x17TASK_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13TASK_STATUS_PENDING\x10\x01\x12\x17\n\x13TASK_STATUS_RUNNING\x10\x02\x12\x14\n\x10TASK_STATUS_DONE\x10\x03\x12\x16\n\x12TASK_STATUS_FAILED\x10\x04\x32\xb2\x02\n\x0bHostService\x12@\n\x0bJoinSession\x12\x17.labflow.v1.JoinRequest\x1a\x18.labflow.v1.JoinResponse\x12?\n\nSubmitTask\x12\x17.labflow.v1.TaskRequest\x1a\x18.labflow.v1.TaskResponse\x12P\n\x0cSandboxWrite\x12\x1f.labflow.v1.SandboxWriteRequest\x1a\x1f.labflow.v1.SandboxReadResponse\x12N\n\x0bSandboxRead\x12\x1e.labflow.v1.SandboxReadRequest\x1a\x1f.labflow.v1.SandboxReadResponse2\xa9\x01\n\x0c\x41gentService\x12\x42\n\x0b\x45xecuteTask\x12\x17.labflow.v1.TaskRequest\x1a\x18.labflow.v1.TaskResponse0\x01\x12U\n\x10\x41gentEventStream\x12\x1d.labflow.v1.AgentEventRequest\x1a\x1e.labflow.v1.AgentEventResponse(\x01\x30\x01\x42:Z8github.com/labflow/host-service/gen/labflow/v1;labflowv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rlabflow.proto\x12\nlabflow.v1\"V\n\x07Session\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x11\n\towner_key\x18\x02 \x01(\t\x12\x10\n\x08peer_ids\x18\x03 \x03(\t\x12\x12\n\ncreated_at\x18\x04 \x01(\x03\"2\n\x0bJoinRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0f\n\x07\x61pi_key\x18\x02 \x01(\t\"@\n\x0cJoinResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\r\n\x05token\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"U\n\x0bTaskRequest\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\t\x12\x10\n\x08priority\x18\x04 \x01(\x05\"f\n\x0cTaskResponse\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\x0e\n\x06result\x18\x02 \x01(\t\x12&\n\x06status\x18\x03 \x01(\x0e\x32\x16.labflow.v1.TaskStatus\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"m\n\x12\x45xecuteCodeRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0c\n\x04\x63ode\x18\x02 \x01(\t\x12\x10\n\x08language\x18\x03 \x01(\t\x12\x12\n\nmax_memory\x18\x04 \x01(\x04\x12\x0f\n\x07max_cpu\x18\x05 \x01(\x04\"`\n\x13\x45xecuteCodeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06output\x18\x02 \x01(\t\x12\r\n\x05\x65rror\x18\x03 \x01(\t\x12\x19\n\x11memory_used_bytes\x18\x04 \x01(\x04\"G\n\x13SandboxWriteRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"F\n\x12SandboxReadRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x04\x12\x0c\n\x04size\x18\x03 \x01(\r\">\n\x13SandboxReadResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\n\n\x02ok\x18\x02 \x01(\x08\x12\r\n\x05\x65rror\x18\x03 \x01(\t\":\n\nChartState\x12\x10\n\x08\x63hart_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"J\n\x11\x43hemicalStructure\x12\x14\n\x0cstructure_id\x18\x01 \x01(\t\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\t\"5\n\x0bMarkdownAST\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\t\x12\x11\n\troot_node\x18\x02 \x01(\t\"6\n\rDeltaMutation\x12\x11\n\ttarget_id\x18\x01 \x01(\t\x12\x12\n\ndelta_data\x18\x02 \x01(\x0c\"L\n\x11\x41gentEventRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\nevent_type\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c\"P\n\x12\x41gentEventResponse\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x15\n\rresponse_type\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c*\x89\x01\n\nTaskStatus\x12\x1b\n\x17TASK_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13TASK_STATUS_PENDING\x10\x01\x12\x17\n\x13TASK_STATUS_RUNNING\x10\x02\x12\x14\n\x10TASK_STATUS_DONE\x10\x03\x12\x16\n\x12TASK_STATUS_FAILED\x10\x04\x32\xb2\x02\n\x0bHostService\x12@\n\x0bJoinSession\x12\x17.labflow.v1.JoinRequest\x1a\x18.labflow.v1.JoinResponse\x12?\n\nSubmitTask\x12\x17.labflow.v1.TaskRequest\x1a\x18.labflow.v1.TaskResponse\x12P\n\x0cSandboxWrite\x12\x1f.labflow.v1.SandboxWriteRequest\x1a\x1f.labflow.v1.SandboxReadResponse\x12N\n\x0bSandboxRead\x12\x1e.labflow.v1.SandboxReadRequest\x1a\x1f.labflow.v1.SandboxReadResponse2\xf9\x01\n\x0c\x41gentService\x12\x42\n\x0b\x45xecuteTask\x12\x17.labflow.v1.TaskRequest\x1a\x18.labflow.v1.TaskResponse0\x01\x12N\n\x0b\x45xecuteCode\x12\x1e.labflow.v1.ExecuteCodeRequest\x1a\x1f.labflow.v1.ExecuteCodeResponse\x12U\n\x10\x41gentEventStream\x12\x1d.labflow.v1.AgentEventRequest\x1a\x1e.labflow.v1.AgentEventResponse(\x01\x30\x01\x42:Z8github.com/labflow/host-service/gen/labflow/v1;labflowv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,8 +32,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'labflow_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z8github.com/labflow/host-service/gen/labflow/v1;labflowv1'
-  _globals['_TASKSTATUS']._serialized_start=1043
-  _globals['_TASKSTATUS']._serialized_end=1180
+  _globals['_TASKSTATUS']._serialized_start=1252
+  _globals['_TASKSTATUS']._serialized_end=1389
   _globals['_SESSION']._serialized_start=29
   _globals['_SESSION']._serialized_end=115
   _globals['_JOINREQUEST']._serialized_start=117
@@ -44,26 +44,30 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TASKREQUEST']._serialized_end=320
   _globals['_TASKRESPONSE']._serialized_start=322
   _globals['_TASKRESPONSE']._serialized_end=424
-  _globals['_SANDBOXWRITEREQUEST']._serialized_start=426
-  _globals['_SANDBOXWRITEREQUEST']._serialized_end=497
-  _globals['_SANDBOXREADREQUEST']._serialized_start=499
-  _globals['_SANDBOXREADREQUEST']._serialized_end=569
-  _globals['_SANDBOXREADRESPONSE']._serialized_start=571
-  _globals['_SANDBOXREADRESPONSE']._serialized_end=633
-  _globals['_CHARTSTATE']._serialized_start=635
-  _globals['_CHARTSTATE']._serialized_end=693
-  _globals['_CHEMICALSTRUCTURE']._serialized_start=695
-  _globals['_CHEMICALSTRUCTURE']._serialized_end=769
-  _globals['_MARKDOWNAST']._serialized_start=771
-  _globals['_MARKDOWNAST']._serialized_end=824
-  _globals['_DELTAMUTATION']._serialized_start=826
-  _globals['_DELTAMUTATION']._serialized_end=880
-  _globals['_AGENTEVENTREQUEST']._serialized_start=882
-  _globals['_AGENTEVENTREQUEST']._serialized_end=958
-  _globals['_AGENTEVENTRESPONSE']._serialized_start=960
-  _globals['_AGENTEVENTRESPONSE']._serialized_end=1040
-  _globals['_HOSTSERVICE']._serialized_start=1183
-  _globals['_HOSTSERVICE']._serialized_end=1489
-  _globals['_AGENTSERVICE']._serialized_start=1492
-  _globals['_AGENTSERVICE']._serialized_end=1661
+  _globals['_EXECUTECODEREQUEST']._serialized_start=426
+  _globals['_EXECUTECODEREQUEST']._serialized_end=535
+  _globals['_EXECUTECODERESPONSE']._serialized_start=537
+  _globals['_EXECUTECODERESPONSE']._serialized_end=633
+  _globals['_SANDBOXWRITEREQUEST']._serialized_start=635
+  _globals['_SANDBOXWRITEREQUEST']._serialized_end=706
+  _globals['_SANDBOXREADREQUEST']._serialized_start=708
+  _globals['_SANDBOXREADREQUEST']._serialized_end=778
+  _globals['_SANDBOXREADRESPONSE']._serialized_start=780
+  _globals['_SANDBOXREADRESPONSE']._serialized_end=842
+  _globals['_CHARTSTATE']._serialized_start=844
+  _globals['_CHARTSTATE']._serialized_end=902
+  _globals['_CHEMICALSTRUCTURE']._serialized_start=904
+  _globals['_CHEMICALSTRUCTURE']._serialized_end=978
+  _globals['_MARKDOWNAST']._serialized_start=980
+  _globals['_MARKDOWNAST']._serialized_end=1033
+  _globals['_DELTAMUTATION']._serialized_start=1035
+  _globals['_DELTAMUTATION']._serialized_end=1089
+  _globals['_AGENTEVENTREQUEST']._serialized_start=1091
+  _globals['_AGENTEVENTREQUEST']._serialized_end=1167
+  _globals['_AGENTEVENTRESPONSE']._serialized_start=1169
+  _globals['_AGENTEVENTRESPONSE']._serialized_end=1249
+  _globals['_HOSTSERVICE']._serialized_start=1392
+  _globals['_HOSTSERVICE']._serialized_end=1698
+  _globals['_AGENTSERVICE']._serialized_start=1701
+  _globals['_AGENTSERVICE']._serialized_end=1950
 # @@protoc_insertion_point(module_scope)

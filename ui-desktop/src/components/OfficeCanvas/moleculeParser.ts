@@ -16,6 +16,60 @@ export interface MoleculeAst {
   bonds: Bond[];
 }
 
+/** Parses the common linear subset of SMILES used by the canvas preview. */
+export function parseSmiles(smiles: string): MoleculeAst {
+  const atoms: Atom[] = [];
+  const bonds: Bond[] = [];
+  let previousAtomIndex: number | null = null;
+  let pendingBondType = 1;
+
+  for (let index = 0; index < smiles.length; index += 1) {
+    const character = smiles[index];
+
+    if (character === "-") {
+      pendingBondType = 1;
+      continue;
+    }
+    if (character === "=") {
+      pendingBondType = 2;
+      continue;
+    }
+    if (character === "#") {
+      pendingBondType = 3;
+      continue;
+    }
+    if ("()[]0123456789".includes(character)) {
+      continue;
+    }
+
+    const nextCharacter = smiles[index + 1];
+    const element = /[a-z]/.test(nextCharacter ?? "")
+      ? `${character}${nextCharacter}`
+      : character;
+    if (!/^[A-Z][a-z]?$/.test(element)) {
+      throw new Error(`Unsupported SMILES token: ${element}`);
+    }
+
+    const atomIndex = atoms.length;
+    atoms.push({ x: atomIndex * 24 + 12, y: 24, z: 0, element });
+    if (element.length === 2) {
+      index += 1;
+    }
+
+    if (previousAtomIndex !== null) {
+      bonds.push({ atom1Index: previousAtomIndex, atom2Index: atomIndex, type: pendingBondType });
+    }
+    previousAtomIndex = atomIndex;
+    pendingBondType = 1;
+  }
+
+  if (atoms.length === 0) {
+    throw new Error("Invalid SMILES: no atoms found");
+  }
+
+  return { atoms, bonds };
+}
+
 /**
  * Parses a standard .mol (V2000) file format into a Molecule AST.
  */

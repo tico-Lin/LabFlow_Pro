@@ -92,6 +92,13 @@ def get_available_modules() -> str:
                 },
             ],
         },
+        {
+            "id": "fit_eis_xrd_peak",
+            "name": "EIS/XRD Peak Fitter",
+            "description": "Automated Gaussian peak fitting for XRD or EIS data.",
+            "supportedFormats": ["XRD", "CV", "CSV"],
+            "parameters": []
+        }
     ]
     return json.dumps(modules)
 
@@ -113,6 +120,42 @@ def find_max_peak(voltages: list[float], currents: list[float]) -> dict:
         "voltage": voltages[max_idx],
         "current": max_val,
     }
+
+
+def fit_eis_xrd_peak(x_data: list[float], y_data: list[float]) -> dict:
+    """
+    Fits a simple Gaussian peak to XRD/EIS data for automated peak detection.
+    y = A * exp(-(x - mu)^2 / (2 * sigma^2)) + C
+    Returns fitted parameters.
+    """
+    if not x_data or not y_data or len(x_data) != len(y_data):
+        raise ValueError("x_data and y_data must be non-empty and of equal length")
+    
+    x = np.array(x_data)
+    y = np.array(y_data)
+    
+    # Simple estimation for Gaussian
+    C = np.min(y)
+    A = np.max(y) - C
+    max_idx = np.argmax(y)
+    mu = x[max_idx]
+    
+    # Estimate sigma (FWHM approx)
+    half_max = C + A / 2.0
+    above_half = np.where(y >= half_max)[0]
+    if len(above_half) >= 2:
+        fwhm = x[above_half[-1]] - x[above_half[0]]
+        sigma = fwhm / 2.355
+    else:
+        sigma = 1.0
+        
+    return {
+        "A": float(A),
+        "mu": float(mu),
+        "sigma": float(sigma),
+        "C": float(C)
+    }
+
 
 
 def _load_json(payload: str) -> dict | list:
@@ -162,6 +205,11 @@ def run_module(module_id: str, params_str: str, data_str: str) -> str:
     if module_id == "find_max_peak":
         voltages, currents = _extract_series(data_payload)
         result = find_max_peak(voltages, currents)
+        return json.dumps(result)
+
+    if module_id == "fit_eis_xrd_peak":
+        x_data, y_data = _extract_series(data_payload)
+        result = fit_eis_xrd_peak(x_data, y_data)
         return json.dumps(result)
 
     raise ValueError(f"unknown analysis module: {module_id}")

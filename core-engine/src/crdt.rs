@@ -728,7 +728,8 @@ pub mod log_codec {
     }
 
     fn write_entry(buf: &mut Vec<u8>, op: &Operation) -> Result<()> {
-        let payload = serde_json::to_vec(op).context("failed to serialise operation")?;
+        let json_payload = serde_json::to_vec(op).context("failed to serialise operation")?;
+        let payload = lz4_flex::compress_prepend_size(&json_payload);
         let len = u32::try_from(payload.len())
             .context("operation payload exceeds 4 GiB")?;
         buf.extend_from_slice(&len.to_be_bytes());
@@ -763,7 +764,10 @@ pub mod log_codec {
                   bytes.len().saturating_sub(payload_start));
         }
 
-        let op: Operation = serde_json::from_slice(&bytes[payload_start..payload_end])
+        let json_payload = lz4_flex::decompress_size_prepended(&bytes[payload_start..payload_end])
+            .context("failed to decompress operation")?;
+
+        let op: Operation = serde_json::from_slice(&json_payload)
             .with_context(|| format!("failed to deserialise operation at offset {cursor}"))?;
 
         Ok((op, payload_end))
@@ -793,6 +797,33 @@ mod tests {
             LamportTs(ts),
             peer,
         )
+    }
+
+    #[test]
+    fn stress_test_10000_ops() {
+        let peer_id = Uuid::new_v4();
+        let mut clock = LamportClock::new();
+        let mut ops = Vec::new();
+
+        // Generate 10000 updates
+        let node_id = Uuid::new_v4();
+        ops.push(insert(node_id, "Initial", clock.tick().0, peer_id));
+        
+        for i in 1..=10000 {
+            ops.push(update(node_id, &format!("Update {}", i), clock.tick().0, peer_id));
+        }
+
+        let mut buf = Vec::new();
+        for op in &ops {
+            log_codec::append(&mut buf, op).expect("append failed");
+        }
+        
+        // Simulating reconnect
+        let decoded_ops = log_codec::decode(&buf).expect("decode failed");
+        assert_eq!(decoded_ops.len(), 10001);
+
+        let state = merge(&decoded_ops, &[]);
+        assert_eq!(state.nodes[&node_id].payload.label, "Update 10000");
     }
 
     fn update(node_id: NodeId, label: &str, ts: u64, peer: PeerId) -> Operation {
@@ -856,7 +887,7 @@ mod tests {
         let node_id = fixed_node(1);
 
         // 1. Initial State
-        let mut ops = vec![insert(node_id, "v1", 1, peer_local)];
+        let ops = vec![insert(node_id, "v1", 1, peer_local)];
         let mut local_cache = ops.clone();
         let mut cloud_backup = ops.clone();
 

@@ -40,6 +40,21 @@ message TaskResponse {
   string error      = 4;
 }
 
+message ExecuteCodeRequest {
+  string session_id = 1;
+  string code       = 2;   // Python or Wasm code string
+  string language   = 3;   // e.g., "python", "wasm"
+  uint64 max_memory = 4;   // Max memory limit in bytes
+  uint64 max_cpu    = 5;   // CPU / Fuel limit
+}
+
+message ExecuteCodeResponse {
+  bool   success    = 1;
+  string output     = 2;   // stdout or execution result
+  string error      = 3;   // stderr or error message
+  uint64 memory_used_bytes = 4;
+}
+
 enum TaskStatus {
   TASK_STATUS_UNSPECIFIED = 0;
   TASK_STATUS_PENDING     = 1;
@@ -85,6 +100,9 @@ service HostService {
 service AgentService {
   // Host → Agent: push a task
   rpc ExecuteTask(TaskRequest) returns (stream TaskResponse);
+
+  // Host → Agent: push code for isolated execution
+  rpc ExecuteCode(ExecuteCodeRequest) returns (ExecuteCodeResponse);
 
   // Bidirectional stream for UI events and analysis results
   rpc AgentEventStream(stream AgentEventRequest) returns (stream AgentEventResponse);

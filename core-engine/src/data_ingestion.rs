@@ -8,6 +8,7 @@ pub enum InstrumentFormat {
     XRD,
     CV,
     CSV,
+    TXT,
     HDF5,
     CIF,
     FITS,
@@ -25,13 +26,14 @@ pub fn detect_format(raw_text: &str) -> InstrumentFormat {
 
     if raw_bytes.starts_with(&[0x89, b'H', b'D', b'F', b'\r', b'\n', 0x1a, b'\n']) {
         InstrumentFormat::HDF5
-    } else if preview.starts_with("SIMPLE  =") {
+    } else if preview.starts_with("simple  =") {
         InstrumentFormat::FITS
     } else if preview.contains("data_") && preview.contains("_cell_length_a") {
         InstrumentFormat::CIF
     } else if preview.contains(",") && preview.lines().next().unwrap_or("").split(',').count() > 1 {
-        // Basic CSV detection
         InstrumentFormat::CSV
+    } else if preview.contains('\t') || (preview.lines().count() > 2 && !preview.contains(',')) {
+        InstrumentFormat::TXT
     } else if preview.contains("2theta") || preview.contains("intensity") {
         InstrumentFormat::XRD
     } else if preview.contains("voltage")
@@ -49,6 +51,7 @@ fn instrument_format_name(format: InstrumentFormat) -> &'static str {
         InstrumentFormat::XRD => "xrd",
         InstrumentFormat::CV => "cv",
         InstrumentFormat::CSV => "csv",
+        InstrumentFormat::TXT => "txt",
         InstrumentFormat::HDF5 => "hdf5",
         InstrumentFormat::CIF => "cif",
         InstrumentFormat::FITS => "fits",
