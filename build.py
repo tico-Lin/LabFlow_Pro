@@ -1,8 +1,16 @@
-import PyInstaller.__main__
-from pathlib import Path
+import subprocess
 import sys
+from pathlib import Path
 
 def build():
+    try:
+        import PySide6
+        print(f"Found PySide6 version {PySide6.__version__} at {PySide6.__file__}")
+    except ImportError:
+        print("Error: PySide6 is not installed in the current environment.")
+        print("Please activate your virtual environment (.venv) and install dependencies before building.")
+        sys.exit(1)
+
     # 取得專案根目錄
     project_root = Path(__file__).parent.absolute()
     
@@ -26,6 +34,8 @@ def build():
         "--hidden-import=scipy",
         "--hidden-import=scipy.sparse",
         "--hidden-import=h5py",
+        "--hidden-import=pandas",
+        "--hidden-import=openpyxl",
         "--hidden-import=pyqtgraph",
         "--hidden-import=labflow.core",
         "--hidden-import=labflow.engine",
@@ -39,6 +49,7 @@ def build():
     
     # PyInstaller 參數
     args = [
+        sys.executable, "-m", "PyInstaller",
         str(entry_point),
         "--name=LabFlowPro",
         "--windowed", # 啟動時不顯示終端機 (Windows)
@@ -52,7 +63,7 @@ def build():
     print("開始編譯 LabFlow Pro...")
     print(f"指令參數: {' '.join(args)}")
     
-    PyInstaller.__main__.run(args)
+    subprocess.check_call(args)
 
 if __name__ == "__main__":
     build()

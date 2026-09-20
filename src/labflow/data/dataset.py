@@ -37,6 +37,14 @@ class DatasetHandle:
         """支援直接切片讀取 (延遲載入/記憶體最佳化)。"""
         return self._dataset[args]
 
+    def __setitem__(self, args, val):
+        """支援直接切片寫入。"""
+        self._dataset[args] = val
+
+    def resize(self, size: tuple[int, ...]) -> None:
+        """支援動態縮放資料集。"""
+        self._dataset.resize(size)
+
     @property
     def attrs(self) -> dict[str, Any]:
         """取得所有屬性。"""

@@ -42,6 +42,7 @@ class ProjectExplorer(QTreeView):
 
     def _init_actions(self) -> None:
         """初始化右鍵選單動作。"""
+        self.action_open = QAction(self)
         self.action_rename = QAction(self)
         self.action_delete = QAction(self)
         self.action_properties = QAction(self)
@@ -58,6 +59,7 @@ class ProjectExplorer(QTreeView):
         
     def retranslate_ui(self) -> None:
         """更新介面語言"""
+        self.action_open.setText(t("project.open", default="開啟 (Open)"))
         self.action_rename.setText(t("project.rename", default="重新命名"))
         self.action_delete.setText(t("project.delete", default="刪除"))
         self.action_properties.setText(t("project.properties", default="屬性"))
@@ -88,20 +90,29 @@ class ProjectExplorer(QTreeView):
         node_type = self._tree_model.data(index, Qt.ItemDataRole.UserRole + 1)
         path = self._tree_model.data(index, Qt.ItemDataRole.UserRole)
         if path:
-            plot_menu = menu.addMenu(t("graph.plot_type", default="繪圖類型"))
-            plot_menu.addAction(self.action_plot_line)
-            plot_menu.addAction(self.action_plot_scatter)
-            
-            analysis_menu = menu.addMenu(t("menu.analysis.title", default="資料分析"))
-            analysis_menu.addAction(self.action_shirley_baseline)
-            analysis_menu.addAction(self.action_smooth_savgol)
+            if node_type in ('dataset', 'matrix', 'text'):
+                # Dataset (Worksheet/Text) can be opened
+                menu.addAction(self.action_open)
+                menu.addSeparator()
+                
+            if node_type in ('dataset', 'matrix'):
+                plot_menu = menu.addMenu(t("graph.plot_type", default="繪圖類型"))
+                plot_menu.addAction(self.action_plot_line)
+                plot_menu.addAction(self.action_plot_scatter)
+                
+                analysis_menu = menu.addMenu(t("menu.analysis.title", default="資料分析"))
+                analysis_menu.addAction(self.action_shirley_baseline)
+                analysis_menu.addAction(self.action_smooth_savgol)
             
         menu.addSeparator()
         menu.addAction(self.action_properties)
         
         # 處理選單動作
         action = menu.exec(self.viewport().mapToGlobal(position))
-        if action == self.action_rename:
+        if action == self.action_open:
+            if path and node_type in ('dataset', 'matrix', 'text'):
+                self.dataset_double_clicked.emit(path)
+        elif action == self.action_rename:
             self._handle_rename(index)
         elif action == self.action_delete:
             self._handle_delete(index)
@@ -127,7 +138,8 @@ class ProjectExplorer(QTreeView):
             return
             
         path = self._tree_model.data(index, Qt.ItemDataRole.UserRole)
-        if path:
+        node_type = self._tree_model.data(index, Qt.ItemDataRole.UserRole + 1)
+        if path and node_type in ('dataset', 'matrix', 'text'):
             logger.info(f"Dataset double clicked: {path}")
             self.dataset_double_clicked.emit(path)
 

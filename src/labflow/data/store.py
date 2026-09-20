@@ -183,20 +183,31 @@ class HDF5DataStore(DataStore):
         def build_tree(name: str, obj: Any) -> None:
             parts = name.split('/')
             current = tree
+            
+            # Traverse to the parent
             for part in parts[:-1]:
                 if part not in current:
-                    current[part] = {}
-                current = current[part]
+                    current[part] = {'type': 'group', 'attrs': {}, 'children': {}, 'path': ''}
+                if 'children' not in current[part]:
+                    current[part]['children'] = {}
+                current = current[part]['children']
             
-            node_info = {
-                'type': 'dataset' if isinstance(obj, h5py.Dataset) else 'group',
-                'attrs': {k: (v.decode('utf-8') if isinstance(v, bytes) else v) for k, v in obj.attrs.items()}
-            }
+            # Set the current node
+            leaf_name = parts[-1]
+            if leaf_name not in current:
+                current[leaf_name] = {'children': {}}
+                
+            node_info = current[leaf_name]
+            node_info['path'] = name
+            node_info['attrs'] = {k: (v.decode('utf-8') if isinstance(v, bytes) else v) for k, v in obj.attrs.items()}
+            
             if isinstance(obj, h5py.Dataset):
+                node_type = node_info['attrs'].get('type', 'dataset')
+                node_info['type'] = node_type
                 node_info['shape'] = obj.shape
                 node_info['dtype'] = str(obj.dtype)
-                
-            current[parts[-1]] = node_info
+            else:
+                node_info['type'] = 'group'
 
         try:
             self._file.visititems(build_tree)

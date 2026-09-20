@@ -57,9 +57,10 @@ class Kernel:
         """取得資料儲存庫。"""
         if not hasattr(self, '_data_store'):
             import h5py
-            import io
+            import tempfile
             from labflow.data.store import HDF5DataStore
-            # Create an in-memory HDF5 file for testing
-            self._h5_file = h5py.File(io.BytesIO(), 'w')
+            # Create a physical temporary HDF5 file for out-of-core partial read/write
+            self._temp_file = tempfile.NamedTemporaryFile(suffix='.h5', delete=False)
+            self._h5_file = h5py.File(self._temp_file.name, 'w')
             self._data_store = HDF5DataStore(self._h5_file)
         return self._data_store

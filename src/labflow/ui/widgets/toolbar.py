@@ -38,16 +38,14 @@ class MainToolBar(QToolBar):
         self.action_open = QAction(self)
         self.action_save = QAction(self)
         
-        self.action_shirley = QAction(self)
-        self.action_smooth = QAction(self)
+        self.action_import = QAction(self)
         
         self.addAction(self.action_new)
         self.addAction(self.action_open)
         self.addAction(self.action_save)
         
         self.addSeparator()
-        self.addAction(self.action_shirley)
-        self.addAction(self.action_smooth)
+        self.addAction(self.action_import)
 
     def retranslate_ui(self) -> None:
         """重新翻譯 UI 文字。"""
@@ -62,8 +60,5 @@ class MainToolBar(QToolBar):
         self.action_save.setText(t("menu.file.save_project", default="儲存專案"))
         self.action_save.setToolTip(t("tooltip.save_project", default="儲存目前專案"))
         
-        self.action_shirley.setText(t("toolbar.analysis.shirley", default="Shirley 基線"))
-        self.action_shirley.setToolTip(t("tooltip.analysis.shirley", default="對選取資料進行 Shirley 基線扣除"))
-        
-        self.action_smooth.setText(t("toolbar.analysis.smooth", default="S-G 平滑化"))
-        self.action_smooth.setToolTip(t("tooltip.analysis.smooth", default="對選取資料進行 Savitzky-Golay 平滑化"))
+        self.action_import.setText(t("menu.data.import", default="匯入資料"))
+        self.action_import.setToolTip(t("tooltip.data.import", default="匯入外部資料 (CSV, TXT, H5)"))

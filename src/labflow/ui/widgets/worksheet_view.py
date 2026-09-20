@@ -6,7 +6,8 @@ from PySide6.QtCore import Slot
 
 from labflow.ui.models.dataset_table_model import DatasetTableModel
 from labflow.ui.delegates.cell_delegate import CellDelegate
-from labflow.core.events import EventBus, DataChangedEvent
+from labflow.core.event_bus import EventBus
+from labflow.core.events import DataChanged
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class WorksheetView(QTableView):
         訂閱 EventBus 事件。
         """
         try:
-            self._event_bus.subscribe(DataChangedEvent, self._on_data_changed)
+            self._event_bus.subscribe(DataChanged, self._on_data_changed)
         except Exception as e:
             logger.error(f"訂閱事件失敗: {e}")
 
@@ -71,16 +72,18 @@ class WorksheetView(QTableView):
             model (DatasetTableModel): 資料模型。
         """
         self.setModel(model)
-        if hasattr(model._worksheet, 'id'):
+        if hasattr(model, '_worksheet') and hasattr(model._worksheet, 'id'):
             self._current_worksheet_id = model._worksheet.id
+        elif hasattr(model, '_data') and hasattr(model._data, 'path'):
+            self._current_worksheet_id = model._data.path
 
-    @Slot(DataChangedEvent)
-    def _on_data_changed(self, event: DataChangedEvent) -> None:
+    @Slot(DataChanged)
+    def _on_data_changed(self, event: DataChanged) -> None:
         """
         處理資料變更事件。
 
         Args:
-            event (DataChangedEvent): 資料變更事件物件。
+            event (DataChanged): 資料變更事件物件。
         """
         if not self.model():
             return

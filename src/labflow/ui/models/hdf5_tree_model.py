@@ -37,12 +37,29 @@ class HDF5Node:
         """取得欄位數量（名稱與類型）。"""
         return 2
 
-    def data(self, column: int) -> Any:
+    def data(self, column: int, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         """取得欄位資料。"""
-        if column == 0:
-            return self.name
-        elif column == 1:
-            return self.node_type
+        if role == Qt.ItemDataRole.DisplayRole:
+            if column == 0:
+                return self.name
+            elif column == 1:
+                if self.node_type == 'group': return '資料夾'
+                if self.node_type == 'dataset': return '工作表'
+                if self.node_type == 'text': return '文字檔'
+                if self.node_type == 'matrix': return '工作表'
+                return self.node_type
+                
+        if role == Qt.ItemDataRole.DecorationRole and column == 0:
+            from PySide6.QtWidgets import QApplication
+            from PySide6.QtWidgets import QFileIconProvider
+            from PySide6.QtCore import QFileInfo
+            
+            provider = QFileIconProvider()
+            if self.node_type == 'group':
+                return provider.icon(QFileIconProvider.IconType.Folder)
+            elif self.node_type == 'dataset':
+                return provider.icon(QFileIconProvider.IconType.File)
+                
         return None
 
     def row(self) -> int:
@@ -142,17 +159,19 @@ class HDF5TreeModel(QAbstractItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ItemDataRole.DisplayRole:
-            item = index.internalPointer()
-            return item.data(index.column())
+        item = index.internalPointer()
+
+        if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.DecorationRole:
+            return item.data(index.column(), role)
             
         if role == Qt.ItemDataRole.ToolTipRole:
-            item = index.internalPointer()
             return f"路徑 (Path): {item.path}\n類型 (Type): {item.node_type}\n雙擊開啟 (Double-click to open)"
         
         if role == Qt.ItemDataRole.UserRole:
-            item = index.internalPointer()
             return item.path
+            
+        if role == Qt.ItemDataRole.UserRole + 1:
+            return item.node_type
             
         return None
 

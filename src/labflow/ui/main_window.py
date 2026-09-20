@@ -80,9 +80,19 @@ class MainWindow(QMainWindow):
         self.dock_console.setWidget(self.console_widget)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.dock_console)
         
-        # 工具列
+        # 設定主要工具列 (Main Toolbar)
+        from labflow.ui.widgets.toolbar import MainToolBar
         self.main_toolbar = MainToolBar(self)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.main_toolbar)
+        
+        # 設定情境工具列 (Context Toolbars)
+        from labflow.ui.widgets.context_toolbars import TextToolBar, TableToolBar
+        self.text_toolbar = TextToolBar(self)
+        self.table_toolbar = TableToolBar(self)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.text_toolbar)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.table_toolbar)
+        self.text_toolbar.hide()
+        self.table_toolbar.hide()
         
         # 狀態列
         self.main_statusbar = MainStatusBar(self)
@@ -106,12 +116,17 @@ class MainWindow(QMainWindow):
         self.menu_file.addAction(self.main_toolbar.action_open)
         self.menu_file.addAction(self.main_toolbar.action_save)
         self.menu_file.addSeparator()
+        self.menu_file.addAction(self.main_toolbar.action_import)
+        self.menu_file.addSeparator()
         self.action_exit = self.menu_file.addAction("離開 (Exit)")
         self.action_exit.triggered.connect(self.close)
         
         # Analysis Menu
-        self.menu_analysis.addAction(self.main_toolbar.action_shirley)
-        self.menu_analysis.addAction(self.main_toolbar.action_smooth)
+        self.action_shirley = self.menu_analysis.addAction(t("toolbar.analysis.shirley", default="Shirley 基線"))
+        self.action_shirley.triggered.connect(lambda: self._trigger_analysis_from_toolbar('shirley_baseline'))
+        
+        self.action_smooth = self.menu_analysis.addAction(t("toolbar.analysis.smooth", default="S-G 平滑化"))
+        self.action_smooth.triggered.connect(lambda: self._trigger_analysis_from_toolbar('savitzky_golay'))
         
         # Graph Menu
         self.menu_graph.addAction("繪製線圖 (Line Plot)").triggered.connect(
@@ -150,13 +165,7 @@ class MainWindow(QMainWindow):
         """注入 Kernel 並設定事件"""
         self._kernel = kernel
         self.main_toolbar.action_open.triggered.connect(self._on_action_open)
-        
-        self.main_toolbar.action_shirley.triggered.connect(
-            lambda: self._trigger_analysis_from_toolbar('shirley_baseline')
-        )
-        self.main_toolbar.action_smooth.triggered.connect(
-            lambda: self._trigger_analysis_from_toolbar('savitzky_golay')
-        )
+        self.main_toolbar.action_import.triggered.connect(self._on_action_import)
         
         # Update Project Explorer with current DataStore
         if hasattr(self.project_explorer, '_tree_model') and hasattr(self.project_explorer._tree_model, 'update_data'):
@@ -166,6 +175,9 @@ class MainWindow(QMainWindow):
         self.project_explorer.dataset_double_clicked.connect(self._on_dataset_double_clicked)
         self.project_explorer.dataset_plot_requested.connect(self._on_dataset_plot_requested)
         self.project_explorer.dataset_analysis_requested.connect(self._on_dataset_analysis_requested)
+        
+        # MDI Area events
+        self.mdi_area.subWindowActivated.connect(self._on_subwindow_activated)
 
     def _trigger_analysis_from_toolbar(self, analysis_name: str) -> None:
         """從頂部工具列觸發分析，取得目前選取的項目"""
@@ -184,6 +196,27 @@ class MainWindow(QMainWindow):
             return
             
         self._on_dataset_analysis_requested(path, analysis_name)
+
+    def _on_subwindow_activated(self, sub_window):
+        """當子視窗被啟動時，切換對應的情境工具列。"""
+        self.text_toolbar.hide()
+        self.table_toolbar.hide()
+        
+        if not sub_window:
+            return
+            
+        widget = sub_window.widget()
+        if widget is None: return
+        
+        from PySide6.QtWidgets import QTextEdit
+        from labflow.ui.widgets.worksheet_widget import WorksheetWidget
+        
+        if isinstance(widget, QTextEdit):
+            self.text_toolbar.set_editor(widget)
+            self.text_toolbar.show()
+        elif isinstance(widget, WorksheetWidget):
+            self.table_toolbar.set_view(widget)
+            self.table_toolbar.show()
 
     def _trigger_plot_from_menu(self, plot_type: str) -> None:
         """從選單觸發繪圖"""
@@ -209,6 +242,13 @@ class MainWindow(QMainWindow):
             store = self._kernel.get_data_store()
             dataset = store.get_dataset(path)
             data = dataset[:]
+            
+            # Convert to float if it is a string array (e.g. from imported CSV)
+            if data.dtype.kind in {'U', 'S', 'O'}:
+                import pandas as pd
+                df = pd.DataFrame(data)
+                # Convert to numeric, coercing errors to NaN
+                data = df.apply(pd.to_numeric, errors='coerce').to_numpy()
             
             # 使用 ComputeDispatcher 執行
             def on_analysis_done(future):
@@ -252,6 +292,14 @@ class MainWindow(QMainWindow):
             
             # 簡單判斷，如果是 1D，y=data, x=arange。如果是 2D，x=col0, y=col1
             shape = data.shape if hasattr(data, 'shape') else (0,)
+            
+            # Convert to float if it is a string array (e.g. from imported CSV)
+            if data.dtype.kind in {'U', 'S', 'O'}:
+                import pandas as pd
+                df = pd.DataFrame(data)
+                # Convert to numeric, coercing errors to NaN
+                data = df.apply(pd.to_numeric, errors='coerce').to_numpy()
+                
             if len(shape) == 1:
                 import numpy as np
                 x = np.arange(shape[0])
@@ -260,6 +308,10 @@ class MainWindow(QMainWindow):
             elif len(shape) >= 2:
                 x = data[:, 0]
                 y = data[:, 1]
+                # Filter out NaNs if any
+                valid_mask = ~(np.isnan(x) | np.isnan(y))
+                x = x[valid_mask]
+                y = y[valid_mask]
                 canvas.add_plot(x, y, type=plot_type, name=path.split('/')[-1])
             
             # 加入中央工作區
@@ -283,14 +335,61 @@ class MainWindow(QMainWindow):
             store = self._kernel.get_data_store()
             dataset = store.get_dataset(path)
             
-            # 建立 WorksheetView 並設定資料模型
-            view = WorksheetView(self._kernel.get_event_bus(), self)
-            model = DatasetTableModel(dataset, view)
-            view.set_model(model)
+            # Check type
+            node_type = dataset.attrs.get('type', '')
+            if isinstance(node_type, bytes):
+                node_type = node_type.decode('utf-8')
+                
+            if node_type == 'text':
+                from PySide6.QtWidgets import QTextEdit
+                from PySide6.QtCore import QTimer
+                import numpy as np
+                
+                # Read chunks to support partial lazy reading (just load all for now as string)
+                data_array = dataset[:]
+                text_content = "\n".join([line.decode('utf-8') if isinstance(line, bytes) else str(line) for line in data_array])
+                
+                view = QTextEdit()
+                if text_content.strip().startswith('<!DOCTYPE HTML>') or text_content.strip().startswith('<html'):
+                    view.setHtml(text_content)
+                else:
+                    view.setPlainText(text_content)
+                
+                # Debounced auto-save
+                save_timer = QTimer(view)
+                save_timer.setSingleShot(True)
+                save_timer.setInterval(1000)  # 1 second debounce
+                
+                def _save_text():
+                    try:
+                        # Convert to HTML to preserve Rich Text formatting (bold, italic, etc)
+                        lines = view.toHtml().split('\n')
+                        dataset.resize((len(lines),))
+                        dataset[:] = np.array(lines, dtype=object)
+                    except Exception as e:
+                        import logging
+                        logging.getLogger(__name__).error(f"Save text failed: {e}")
+                        
+                save_timer.timeout.connect(_save_text)
+                view.textChanged.connect(save_timer.start)
+                
+                sub = QMdiSubWindow()
+                sub.setWidget(view)
+                sub.setWindowTitle(path.split('/')[-1])
+                sub.resize(600, 400)
+                self.mdi_area.addSubWindow(sub)
+                sub.show()
+                return
+                
+            # 建立 WorksheetWidget 並設定資料模型 (Table + Formula Bar)
+            from labflow.ui.widgets.worksheet_widget import WorksheetWidget
+            widget = WorksheetWidget(self._kernel.get_event_bus(), self)
+            model = DatasetTableModel(dataset, widget.view)
+            widget.set_model(model)
             
-            # 加入中央工作區 (QMdiArea)
+            # 加入工作區 (QMdiArea)
             sub = QMdiSubWindow()
-            sub.setWidget(view)
+            sub.setWidget(widget)
             sub.setWindowTitle(path.split('/')[-1])
             sub.resize(600, 400)
             self.mdi_area.addSubWindow(sub)
@@ -300,39 +399,102 @@ class MainWindow(QMainWindow):
             logging.getLogger(__name__).error(f"Failed to open dataset {path}: {e}")
 
     def _on_action_open(self) -> None:
-        """開啟檔案的動作"""
+        """開啟專案的動作 (未實作)"""
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.information(self, "開啟舊檔", "開啟專案功能尚未完整實作，若要匯入資料請使用「資料 -> 匯入資料」。")
+
+    def _on_action_import(self) -> None:
+        """匯入檔案的動作"""
         from PySide6.QtWidgets import QFileDialog
         from PySide6.QtWidgets import QMessageBox
         import numpy as np
         
         file_path, _ = QFileDialog.getOpenFileName(
-            self, t("dialog.open.title", default="Open Data File"), "", "Data Files (*.csv *.h5);;All Files (*)"
+            self, t("dialog.import.title", default="匯入資料檔案 (Import Data)"), "", "Data Files (*.csv *.txt *.xls *.xlsx *.h5);;All Files (*)"
         )
         if not file_path:
             return
             
         try:
             store = self._kernel.get_data_store()
-            if file_path.endswith('.csv'):
-                import os
-                name = os.path.basename(file_path).replace('.csv', '')
+            import os
+            
+            if file_path.endswith('.txt'):
+                name = os.path.basename(file_path).rsplit('.', 1)[0]
                 try:
-                    # First try to load assuming no headers, or pandas if installed
-                    try:
-                        import pandas as pd
-                        df = pd.read_csv(file_path)
-                        data = df.to_numpy(dtype=np.float64, na_value=np.nan)
-                    except ImportError:
-                        data = np.loadtxt(file_path, delimiter=',')
-                except ValueError:
-                    # If ValueError occurs, likely there's a header string
-                    try:
-                        data = np.loadtxt(file_path, delimiter=',', skiprows=1)
-                    except Exception as e:
-                        # Fallback to genfromtxt which handles missing values
-                        data = np.genfromtxt(file_path, delimiter=',', skip_header=1, filling_values=np.nan)
+                    # Read as raw text lines (partial read/write supported via 1D chunking)
+                    lines = []
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        for line in f:
+                            lines.append(line.rstrip('\n'))
+                            
+                    import numpy as np
+                    data = np.array(lines, dtype=object)
+                    
+                    import h5py
+                    dt = h5py.string_dtype(encoding='utf-8')
+                    
+                    path_name = f"/Imported/{name}"
+                    if path_name in store._file:
+                        del store._file[path_name]
+                        
+                    ds = store._file.create_dataset(path_name, data=data, dtype=dt, maxshape=(None,))
+                    ds.attrs['name'] = name.encode('utf-8')
+                    ds.attrs['type'] = 'text'  # Mark as raw text
+                    
+                except Exception as e:
+                    raise RuntimeError(f"無法解析純文字檔案: {e}")
+
+            elif file_path.endswith('.csv') or file_path.endswith('.xls') or file_path.endswith('.xlsx'):
+                name = os.path.basename(file_path).rsplit('.', 1)[0]
                 
-                store.create_dataset(f"/Imported/{name}", data)
+                try:
+                    if file_path.endswith('.xls') or file_path.endswith('.xlsx'):
+                        import pandas as pd
+                        df = pd.read_excel(file_path, header=None, dtype=str)
+                        data = df.fillna("").to_numpy(dtype=object)
+                    else:
+                        import csv
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            first_line = f.readline()
+                            if '\t' in first_line: delim = '\t'
+                            elif ',' in first_line: delim = ','
+                            elif ';' in first_line: delim = ';'
+                            else: delim = None
+                        
+                        rows = []
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            if delim is None:
+                                for line in f:
+                                    row = line.strip().split()
+                                    if row: rows.append(row)
+                            else:
+                                reader = csv.reader(f, delimiter=delim)
+                                for row in reader:
+                                    if row: rows.append(row)
+                                    
+                        max_len = max((len(r) for r in rows), default=0)
+                        padded_rows = []
+                        for r in rows:
+                            padded_rows.append(r + [""] * (max_len - len(r)))
+                            
+                        import numpy as np
+                        data = np.array(padded_rows, dtype=object)
+                    
+                    import h5py
+                    dt = h5py.string_dtype(encoding='utf-8')
+                    
+                    path_name = f"/Imported/{name}"
+                    if path_name in store._file:
+                        del store._file[path_name]
+                        
+                    ds = store._file.create_dataset(path_name, data=data, dtype=dt, maxshape=(None, None))
+                    ds.attrs['name'] = name.encode('utf-8')
+                    ds.attrs['type'] = 'matrix'  # Mark as table/matrix
+                    
+                except Exception as e:
+                    raise RuntimeError(f"無法解析表格檔案: {e}")
+                
             elif file_path.endswith('.h5'):
                 import h5py
                 def visit_func(name, node):
