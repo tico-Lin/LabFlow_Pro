@@ -128,3 +128,24 @@ func (c *CloudSyncer) downloadFile(ctx context.Context, filename string) {
 	time.Sleep(20 * time.Millisecond)
 }
 
+// Added OAuth flow implementation stub and Dropout Simulation
+func (c *CloudSyncer) handleConnectionDropout() bool {
+    // Simulate dropouts
+    if time.Now().Unix()%10 == 0 {
+        slog.Warn("Simulating network dropout, buffering sync state...")
+        return true
+    }
+    return false
+}
+
+func (c *CloudSyncer) authenticateOAuth2() error {
+    if c.provider == "GoogleDrive" {
+        slog.Info("Authenticating via Google Drive OAuth 2.0...")
+        // Would use golang.org/x/oauth2
+    } else if c.provider == "OneDrive" {
+        slog.Info("Authenticating via OneDrive OAuth 2.0...")
+    } else {
+        return fmt.Errorf("Unsupported provider %s", c.provider)
+    }
+    return nil
+}

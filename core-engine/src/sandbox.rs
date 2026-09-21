@@ -168,12 +168,12 @@ pub struct SandboxResult {
 
 /// FFI endpoint for agent.py to invoke sandbox execution with isolation
 #[no_mangle]
-pub extern "C" fn execute_agent_code(
+pub unsafe extern "C" fn execute_agent_code(
     wasm_bytes: *const u8,
     wasm_len: usize,
     max_memory: usize,
 ) -> SandboxResult {
-    let bytes = unsafe { std::slice::from_raw_parts(wasm_bytes, wasm_len) };
+    let bytes = std::slice::from_raw_parts(wasm_bytes, wasm_len);
     
     let monitor = ResourceMonitor {
         max_memory_bytes: max_memory,

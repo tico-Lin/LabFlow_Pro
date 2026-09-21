@@ -25,7 +25,7 @@ func NewServer() *Server {
 	grpcServer := grpc.NewServer()
 	hostService := agent.NewHostService(4) // 4 workers for task queue
 	
-	// pb.RegisterHostServiceServer(grpcServer, hostService) // Assumes gen pb code exists
+	pb.RegisterHostServiceServer(grpcServer, hostService)
 	
 	return &Server{
 		grpc:        grpcServer,

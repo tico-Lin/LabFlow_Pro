@@ -4,7 +4,7 @@ import { useTranslation } from "../i18n";
 export enum RenderTier {
   L1_Skeleton = "L1_Skeleton",
   L2_Tooling = "L2_Tooling",
-  L3_Advanced = "L3_Advanced"
+  L3_Advanced = "L3_Advanced",
 }
 
 type Capability = {
@@ -19,7 +19,11 @@ export function useHardwareCapability(): Capability {
     }
 
     const preset = window.localStorage.getItem("labflow.renderTier");
-    if (preset === RenderTier.L1_Skeleton || preset === RenderTier.L2_Tooling || preset === RenderTier.L3_Advanced) {
+    if (
+      preset === RenderTier.L1_Skeleton ||
+      preset === RenderTier.L2_Tooling ||
+      preset === RenderTier.L3_Advanced
+    ) {
       return preset;
     }
 
@@ -72,7 +76,10 @@ function L2CanvasChart({ points }: { points: string[] }) {
     ctx.fillRect(0, 0, width, height);
 
     const barGap = 12;
-    const barWidth = Math.max(12, (width - barGap * (points.length + 1)) / points.length);
+    const barWidth = Math.max(
+      12,
+      (width - barGap * (points.length + 1)) / points.length,
+    );
 
     points.forEach((_, idx) => {
       const value = 24 + ((idx * 17) % 62);
@@ -83,7 +90,9 @@ function L2CanvasChart({ points }: { points: string[] }) {
     });
   }, [points]);
 
-  return <canvas ref={canvasRef} className="tier-canvas" width={380} height={140} />;
+  return (
+    <canvas ref={canvasRef} className="tier-canvas" width={380} height={140} />
+  );
 }
 
 function L3WebGLStarMap() {
@@ -112,7 +121,9 @@ function L3WebGLStarMap() {
     return <div className="tier-fallback">{t("matrix.fallback")}</div>;
   }
 
-  return <canvas ref={canvasRef} className="tier-canvas" width={420} height={170} />;
+  return (
+    <canvas ref={canvasRef} className="tier-canvas" width={420} height={170} />
+  );
 }
 
 function GridCard({ card, tier }: GridCardProps) {
@@ -143,7 +154,9 @@ function GridCard({ card, tier }: GridCardProps) {
         </ul>
       )}
 
-      {tier === RenderTier.L2_Tooling && <L2CanvasChart points={card.content} />}
+      {tier === RenderTier.L2_Tooling && (
+        <L2CanvasChart points={card.content} />
+      )}
 
       {tier === RenderTier.L3_Advanced && <L3WebGLStarMap />}
     </article>
@@ -163,7 +176,7 @@ export default function MatrixDashboard() {
         y: 0,
         w: 6,
         h: 4,
-        content: tm("matrix.cards.topologicalDeltaStream.items")
+        content: tm("matrix.cards.topologicalDeltaStream.items"),
       },
       {
         id: "B1",
@@ -172,7 +185,7 @@ export default function MatrixDashboard() {
         y: 0,
         w: 6,
         h: 4,
-        content: tm("matrix.cards.consensusControlPlane.items")
+        content: tm("matrix.cards.consensusControlPlane.items"),
       },
       {
         id: "C1",
@@ -181,7 +194,7 @@ export default function MatrixDashboard() {
         y: 4,
         w: 8,
         h: 5,
-        content: tm("matrix.cards.starGraphFocus.items")
+        content: tm("matrix.cards.starGraphFocus.items"),
       },
       {
         id: "D1",
@@ -190,10 +203,10 @@ export default function MatrixDashboard() {
         y: 4,
         w: 4,
         h: 5,
-        content: tm("matrix.cards.agentRuntimeLanes.items")
-      }
+        content: tm("matrix.cards.agentRuntimeLanes.items"),
+      },
     ],
-    [t, tm]
+    [t, tm],
   );
 
   return (
@@ -207,9 +220,15 @@ export default function MatrixDashboard() {
             value={tier}
             onChange={(event) => setTier(event.target.value as RenderTier)}
           >
-            <option value={RenderTier.L1_Skeleton}>{t("matrix.tiers.L1_Skeleton")}</option>
-            <option value={RenderTier.L2_Tooling}>{t("matrix.tiers.L2_Tooling")}</option>
-            <option value={RenderTier.L3_Advanced}>{t("matrix.tiers.L3_Advanced")}</option>
+            <option value={RenderTier.L1_Skeleton}>
+              {t("matrix.tiers.L1_Skeleton")}
+            </option>
+            <option value={RenderTier.L2_Tooling}>
+              {t("matrix.tiers.L2_Tooling")}
+            </option>
+            <option value={RenderTier.L3_Advanced}>
+              {t("matrix.tiers.L3_Advanced")}
+            </option>
           </select>
         </div>
       </div>
@@ -219,6 +238,58 @@ export default function MatrixDashboard() {
           <GridCard key={card.id} card={card} tier={tier} />
         ))}
       </div>
+      <CopilotPanel />
     </section>
+  );
+}
+// Agent Copilot Panel Component
+export function CopilotPanel() {
+  const [logs, setLogs] = useState<string[]>([
+    "Initializing Agent Consensus...",
+  ]);
+
+  // Mock listening to agent events
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLogs((prev) => [
+        ...prev,
+        "Generating multi-model proposals...",
+        "Running blind review in Rust Sandbox...",
+      ]);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <aside
+      className="copilot-panel"
+      style={{
+        position: "fixed",
+        right: 0,
+        top: 0,
+        width: "300px",
+        height: "100vh",
+        background: "#1e293b",
+        color: "white",
+        padding: "1rem",
+        overflowY: "auto",
+      }}
+    >
+      <h3>Agentic Copilot</h3>
+      <div className="log-container">
+        {logs.map((log, idx) => (
+          <div
+            key={idx}
+            style={{
+              fontSize: "0.85rem",
+              marginBottom: "0.5rem",
+              color: "#38bdf8",
+            }}
+          >
+            {log}
+          </div>
+        ))}
+      </div>
+    </aside>
   );
 }

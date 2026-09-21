@@ -40,3 +40,48 @@ if __name__ == "__main__":
     test_savgol_filter()
     test_fft()
     print("All analysis tests passed!")
+import pytest
+import numpy as np
+from agent_runtime.agent import Critic
+
+def test_randles_sevcik_analysis():
+    critic = Critic()
+    
+    # Mocking a generated execution result of Randles-Sevcik fitting
+    # Ip = 2.69e5 * n^(3/2) * A * D^(1/2) * C * v^(1/2)
+    # We expect a linear fit of Ip vs sqrt(v).
+    
+    mock_execution_result = {
+        "output": "Randles-Sevcik R^2: 0.998",
+        "metrics": {
+            "memory_bytes": 1024 * 1024 * 5 # 5MB
+        }
+    }
+    
+    expected_output = {
+        "output": "Randles-Sevcik R^2: 0.998",
+        "max_memory_bytes": 1024 * 1024 * 10 # 10MB limit
+    }
+    
+    is_valid, msg = critic.verify(mock_execution_result, expected_output)
+    
+    assert is_valid == True
+    assert msg == "Success"
+
+def test_randles_sevcik_analysis_oom():
+    critic = Critic()
+    mock_execution_result = {
+        "output": "Randles-Sevcik R^2: 0.998",
+        "metrics": {
+            "memory_bytes": 1024 * 1024 * 50 # 50MB (exceeds limit)
+        }
+    }
+    expected_output = {
+        "output": "Randles-Sevcik R^2: 0.998",
+        "max_memory_bytes": 1024 * 1024 * 10 # 10MB limit
+    }
+    
+    is_valid, msg = critic.verify(mock_execution_result, expected_output)
+    
+    assert is_valid == False
+    assert "Memory footprint" in msg

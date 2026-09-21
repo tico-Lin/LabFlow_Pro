@@ -12,6 +12,8 @@ pub enum InstrumentFormat {
     HDF5,
     CIF,
     FITS,
+    ECLab,
+    XPS,
     Unknown,
 }
 
@@ -41,6 +43,10 @@ pub fn detect_format(raw_text: &str) -> InstrumentFormat {
         || preview.contains("scan rate")
     {
         InstrumentFormat::CV
+    } else if preview.contains("mpt") || preview.contains("ec-lab") {
+        InstrumentFormat::ECLab
+    } else if preview.contains("binding energy") || (preview.contains("xps") && preview.contains("counts")) {
+        InstrumentFormat::XPS
     } else {
         InstrumentFormat::Unknown
     }
@@ -55,6 +61,8 @@ fn instrument_format_name(format: InstrumentFormat) -> &'static str {
         InstrumentFormat::HDF5 => "hdf5",
         InstrumentFormat::CIF => "cif",
         InstrumentFormat::FITS => "fits",
+        InstrumentFormat::ECLab => "eclab",
+        InstrumentFormat::XPS => "xps",
         InstrumentFormat::Unknown => "unknown",
     }
 }
@@ -222,6 +230,8 @@ pub fn ingest_ascii_data(ascii: &str, peer_id: PeerId) -> Vec<Operation> {
     let (metadata, xs, ys) = match detected_format {
         InstrumentFormat::CV => parse_cv(ascii),
         InstrumentFormat::XRD => parse_xrd(ascii),
+        InstrumentFormat::ECLab => parse_eclab(ascii),
+        InstrumentFormat::XPS => parse_xps(ascii),
         _ => parse_fallback(ascii),
     };
 
@@ -273,11 +283,14 @@ pub fn parse_hdf5_mock(path: &std::path::Path) -> Result<Value, String> {
         "root": {
             "datasets": [
                 {"name": "voltage", "type": "float64", "shape": [1000]},
-                {"name": "current", "type": "float64", "shape": [1000]}
+                {"name": "current", "type": "float64", "shape": [1000]},
+                {"name": "binding_energy", "type": "float64", "shape": [1000]},
+                {"name": "counts", "type": "float64", "shape": [1000]}
             ],
             "attributes": {
                 "experiment_id": "SIM-8821",
-                "operator": "LabFlow Agent"
+                "operator": "LabFlow Agent",
+                "instrument_format": "standardized_hdf5"
             }
         }
     }))
@@ -454,4 +467,47 @@ mod tests {
             _ => panic!("Expected InsertNode"),
         }
     }
+}
+pub fn parse_eclab(text: &str) -> (Value, Vec<f64>, Vec<f64>) {
+    let mut metadata = Map::new();
+    let mut xs = Vec::new();
+    let mut ys = Vec::new();
+
+    metadata.insert("parser".to_string(), json!("eclab"));
+    metadata.insert("x_label".to_string(), json!("Ewe/V"));
+    metadata.insert("y_label".to_string(), json!("I/mA"));
+
+    for raw_line in text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() { continue; }
+        // Simple stub for ECLab
+        if let Some((x, y)) = parse_numeric_pair(line) {
+            xs.push(x);
+            ys.push(y);
+        }
+    }
+
+    (Value::Object(metadata), xs, ys)
+}
+
+pub fn parse_xps(text: &str) -> (Value, Vec<f64>, Vec<f64>) {
+    let mut metadata = Map::new();
+    let mut xs = Vec::new();
+    let mut ys = Vec::new();
+
+    metadata.insert("parser".to_string(), json!("xps"));
+    metadata.insert("x_label".to_string(), json!("Binding Energy (eV)"));
+    metadata.insert("y_label".to_string(), json!("Counts"));
+
+    for raw_line in text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() { continue; }
+        // Simple stub for XPS
+        if let Some((x, y)) = parse_numeric_pair(line) {
+            xs.push(x);
+            ys.push(y);
+        }
+    }
+
+    (Value::Object(metadata), xs, ys)
 }

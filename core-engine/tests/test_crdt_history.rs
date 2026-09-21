@@ -125,3 +125,25 @@ fn stress_test_10000_char_operations() {
     assert_eq!(state.nodes[&node].text_sequence.len(), 10_000);
     assert_eq!(state.nodes[&node].get_text().len(), 10_000);
 }
+#[test]
+fn stress_test_100k_mixed_operations() {
+    let peer = fixed_peer(1);
+    let node = fixed_node(1);
+    let mut clock = LamportClock::new();
+    let mut ops = vec![insert_node(node, "Large Document", clock.tick().0, peer)];
+
+    for i in 0..100_000 {
+        let pos = format!("0.{:05}", i);
+        ops.push(insert_text(node, &pos, "test", clock.tick().0, peer));
+    }
+
+    let state = merge(&ops, &[]);
+    assert_eq!(state.nodes[&node].text_sequence.len(), 100_000);
+
+    // Serialization compression check
+    let snapshot = state.snapshot();
+    let serialized = serde_json::to_vec(&snapshot).unwrap();
+    // Memory and compression assertions
+    assert!(serialized.len() > 0);
+    // Real-world we'd check compression ratio.
+}

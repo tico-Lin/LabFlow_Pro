@@ -109,4 +109,7 @@ export default function RichMarkdownEditor({ nodeId, value, placeholder, theme, 
   }, [value]);
 
   return <div className="rich-markdown-editor" ref={hostRef} />;
+}// Added SMILES rendering hook
+export function initSmilesDrawer() {
+  // Stub for hooking up smiles-drawer inside ToastUI
 }
