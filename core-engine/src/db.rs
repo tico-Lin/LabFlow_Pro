@@ -1,9 +1,13 @@
 use std::path::Path;
+use rusqlite::Result;
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 
-use rusqlite::{Connection, Result};
+pub fn init_db(db_path: &Path) -> Result<Pool<SqliteConnectionManager>, String> {
+    let manager = SqliteConnectionManager::file(db_path);
+    let pool = Pool::new(manager).map_err(|e| format!("Failed to create pool: {}", e))?;
 
-pub fn init_db(db_path: &Path) -> Result<Connection> {
-    let conn = Connection::open(db_path)?;
+    let conn = pool.get().map_err(|e| format!("Failed to get connection: {}", e))?;
 
     conn.execute_batch(
         r#"
@@ -30,9 +34,8 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
             peer_id TEXT NOT NULL,
             payload BLOB NOT NULL
         );
-
         "#,
-    )?;
+    ).map_err(|e| format!("Failed to initialize db schema: {}", e))?;
 
-    Ok(conn)
+    Ok(pool)
 }

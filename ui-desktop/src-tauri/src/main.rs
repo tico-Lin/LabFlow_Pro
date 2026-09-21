@@ -23,7 +23,7 @@ struct EngineBridgeState {
 }
 
 struct DbState {
-    conn: Mutex<rusqlite::Connection>,
+    pool: r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,
 }
 
 fn hydrate_file_node_json(
@@ -310,14 +310,17 @@ fn create_note_node(
 }
 
 #[tauri::command]
-fn import_raw_file(
+async fn import_raw_file(
     window: Window,
     db_state: State<'_, DbState>,
     source_path: String,
 ) -> Result<String, String> {
     use std::path::Path;
 
-    let metadata = core_engine::blob_storage::ingest_file(Path::new(&source_path))?;
+    let source_path_clone = source_path.clone();
+    let metadata = tokio::task::spawn_blocking(move || {
+        core_engine::blob_storage::ingest_file(Path::new(&source_path_clone))
+    }).await.map_err(|e| format!("Task join error: {}", e))??;
     let node_id = Uuid::new_v4().to_string();
     let now_ts = current_unix_ts()?;
 
@@ -330,9 +333,9 @@ fn import_raw_file(
         .map_err(|err| format!("failed to serialize node properties: {err}"))?;
 
     let conn = db_state
-        .conn
-        .lock()
-        .map_err(|_| "failed to acquire sqlite connection lock".to_string())?;
+        .pool
+        .get()
+        .map_err(|e| format!("failed to acquire db connection: {}", e))?;
 
     conn.execute(
         "INSERT INTO nodes (id, node_type, blob_hash, properties, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -563,9 +566,9 @@ fn update_file_metadata(
     remark: String,
 ) -> Result<(), String> {
     let conn = db_state
-        .conn
-        .lock()
-        .map_err(|_| "failed to acquire sqlite connection lock".to_string())?;
+        .pool
+        .get()
+        .map_err(|e| format!("failed to acquire db connection: {}", e))?;
 
     let raw_properties: Option<String> = conn
         .query_row(
@@ -610,9 +613,9 @@ fn list_files(
     limit: u32,
 ) -> Result<Vec<serde_json::Value>, String> {
     let conn = db_state
-        .conn
-        .lock()
-        .map_err(|_| "failed to acquire sqlite connection lock".to_string())?;
+        .pool
+        .get()
+        .map_err(|e| format!("failed to acquire db connection: {}", e))?;
 
     let mut stmt = conn
         .prepare(
@@ -653,9 +656,9 @@ fn list_files(
 #[tauri::command]
 fn get_file_node(db_state: State<'_, DbState>, id: String) -> Result<serde_json::Value, String> {
     let conn = db_state
-        .conn
-        .lock()
-        .map_err(|_| "failed to acquire sqlite connection lock".to_string())?;
+        .pool
+        .get()
+        .map_err(|e| format!("failed to acquire db connection: {}", e))?;
 
     let row = conn
         .query_row(
@@ -698,7 +701,7 @@ fn main() {
                 .map_err(|err| format!("failed to initialize sqlite index db: {err}"))?;
             core_engine::background_worker::spawn_alignment_daemon(db_path.clone());
             app.manage(DbState {
-                conn: Mutex::new(conn),
+                pool: conn,
             });
             Ok(())
         })

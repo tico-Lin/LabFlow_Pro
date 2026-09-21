@@ -4,18 +4,20 @@ from __future__ import annotations
 
 import json
 import math
-import ast
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 
 class ToTNode:
     """Node in the Tree of Thoughts representing a possible implementation path."""
-    def __init__(self, state: Dict[str, Any], parent: Optional['ToTNode'] = None):
+
+    def __init__(self, state: dict[str, Any], parent: ToTNode | None = None):
         self.state = state  # Contains current AST or code state
         self.parent = parent
-        self.children: List['ToTNode'] = []
+        self.children: list[ToTNode] = []
         self.score: float = 0.0
 
-def decompose_task_to_ast(high_level_goal: str) -> List[Dict[str, Any]]:
+
+def decompose_task_to_ast(high_level_goal: str) -> list[dict[str, Any]]:
     """
     Parses high-level goals (e.g., 'implement chemical structure drawing algorithm')
     and degrades them into specific Abstract Syntax Tree (AST) modifications or module incremental code.
@@ -24,40 +26,51 @@ def decompose_task_to_ast(high_level_goal: str) -> List[Dict[str, Any]]:
     # 1. Initialize Root Thought (Initial State)
     initial_state = {"goal": high_level_goal, "ast_modifications": [], "incremental_code": ""}
     root = ToTNode(state=initial_state)
-    
+
     # 2. Expand thoughts (mocking the generation of multiple paths)
     # In a real implementation, this would call an LLM to generate next possible states.
-    path_1 = ToTNode(state={"goal": high_level_goal, "ast_modifications": [{"type": "AddFunction", "name": "draw_chemical_structure"}], "incremental_code": "def draw_chemical_structure(): pass"}, parent=root)
-    path_2 = ToTNode(state={"goal": high_level_goal, "ast_modifications": [{"type": "ImportModule", "name": "rdkit"}], "incremental_code": "import rdkit"}, parent=root)
+    path_1 = ToTNode(
+        state={
+            "goal": high_level_goal,
+            "ast_modifications": [{"type": "AddFunction", "name": "draw_chemical_structure"}],
+            "incremental_code": "def draw_chemical_structure(): pass",
+        },
+        parent=root,
+    )
+    path_2 = ToTNode(
+        state={
+            "goal": high_level_goal,
+            "ast_modifications": [{"type": "ImportModule", "name": "rdkit"}],
+            "incremental_code": "import rdkit",
+        },
+        parent=root,
+    )
     root.children.extend([path_1, path_2])
-    
+
     # 3. Return generated paths
     paths = []
     for child in root.children:
-        paths.append({
-            "path_id": id(child),
-            "ast_modifications": child.state.get("ast_modifications", []),
-            "incremental_code": child.state.get("incremental_code", "")
-        })
+        paths.append(
+            {
+                "path_id": id(child),
+                "ast_modifications": child.state.get("ast_modifications", []),
+                "incremental_code": child.state.get("incremental_code", ""),
+            }
+        )
     return paths
 
 
 def get_available_modules() -> str:
     modules = [
-         {
+        {
             "id": "magic_filter",
             "name": "魔法濾波器",
             "description": "用神秘力量過濾雜訊",
             "supportedFormats": ["CSV"],
             "parameters": [
-            {
-            "key": "magic_power",
-            "name": "魔力強度",
-            "type": "number",
-            "defaultValue": 99
-            }
-            ]
-         },
+                {"key": "magic_power", "name": "魔力強度", "type": "number", "defaultValue": 99}
+            ],
+        },
         {
             "id": "find_max_peak",
             "name": "Peak Finder",
@@ -97,7 +110,7 @@ def get_available_modules() -> str:
             "name": "EIS/XRD Peak Fitter",
             "description": "Automated Gaussian peak fitting for XRD or EIS data.",
             "supportedFormats": ["XRD", "CV", "CSV"],
-            "parameters": []
+            "parameters": [],
         },
         {
             "id": "savgol_filter",
@@ -109,28 +122,29 @@ def get_available_modules() -> str:
                     "key": "window_length",
                     "name": "Window Length",
                     "type": "number",
-                    "defaultValue": 11
+                    "defaultValue": 11,
                 },
                 {
                     "key": "polyorder",
                     "name": "Polynomial Order",
                     "type": "number",
-                    "defaultValue": 2
-                }
-            ]
+                    "defaultValue": 2,
+                },
+            ],
         },
         {
             "id": "fft_analysis",
             "name": "Fast Fourier Transform (FFT)",
             "description": "Perform FFT on the dataset to analyze frequency components.",
             "supportedFormats": ["CV", "CSV", "TXT"],
-            "parameters": []
-        }
+            "parameters": [],
+        },
     ]
     return json.dumps(modules)
 
 
 import numpy as np
+
 
 def find_max_peak(voltages: list[float], currents: list[float]) -> dict:
     """尋找 currents 中最大值的 index，並回傳對應的電壓與電流。"""
@@ -157,16 +171,16 @@ def fit_eis_xrd_peak(x_data: list[float], y_data: list[float]) -> dict:
     """
     if not x_data or not y_data or len(x_data) != len(y_data):
         raise ValueError("x_data and y_data must be non-empty and of equal length")
-    
+
     x = np.array(x_data)
     y = np.array(y_data)
-    
+
     # Simple estimation for Gaussian
     C = np.min(y)
     A = np.max(y) - C
     max_idx = np.argmax(y)
     mu = x[max_idx]
-    
+
     # Estimate sigma (FWHM approx)
     half_max = C + A / 2.0
     above_half = np.where(y >= half_max)[0]
@@ -175,49 +189,38 @@ def fit_eis_xrd_peak(x_data: list[float], y_data: list[float]) -> dict:
         sigma = fwhm / 2.355
     else:
         sigma = 1.0
-        
-    return {
-        "A": float(A),
-        "mu": float(mu),
-        "sigma": float(sigma),
-        "C": float(C)
-    }
 
-def apply_savgol_filter(x_data: list[float], y_data: list[float], window_length: int, polyorder: int) -> dict:
+    return {"A": float(A), "mu": float(mu), "sigma": float(sigma), "C": float(C)}
+
+
+def apply_savgol_filter(
+    x_data: list[float], y_data: list[float], window_length: int, polyorder: int
+) -> dict:
     import scipy.signal
+
     if len(y_data) < window_length:
         window_length = len(y_data) if len(y_data) % 2 != 0 else len(y_data) - 1
         if window_length <= polyorder:
             raise ValueError("Dataset is too small for the specified window length and polyorder.")
 
     smoothed_y = scipy.signal.savgol_filter(y_data, window_length, polyorder)
-    return {
-        "data": {
-            "x": x_data,
-            "y": smoothed_y.tolist()
-        }
-    }
+    return {"data": {"x": x_data, "y": smoothed_y.tolist()}}
+
 
 def apply_fft(x_data: list[float], y_data: list[float]) -> dict:
     if len(x_data) < 2:
         raise ValueError("Not enough data points for FFT")
-        
+
     N = len(y_data)
     # Assuming uniform spacing for sample spacing
     T = x_data[1] - x_data[0]
     if T == 0:
         T = 1.0
-        
-    yf = np.fft.fft(y_data)
-    xf = np.fft.fftfreq(N, T)[:N//2]
-    
-    return {
-        "data": {
-            "x": xf.tolist(),
-            "y": (2.0/N * np.abs(yf[0:N//2])).tolist()
-        }
-    }
 
+    yf = np.fft.fft(y_data)
+    xf = np.fft.fftfreq(N, T)[: N // 2]
+
+    return {"data": {"x": xf.tolist(), "y": (2.0 / N * np.abs(yf[0 : N // 2])).tolist()}}
 
 
 def _load_json(payload: str) -> dict | list:
@@ -234,8 +237,12 @@ def _load_json(payload: str) -> dict | list:
 
 def _extract_series(data_payload: dict | list) -> tuple[list[float], list[float]]:
     if isinstance(data_payload, list):
-        voltages = [float(point["x"]) for point in data_payload if isinstance(point, dict) and "x" in point]
-        currents = [float(point["y"]) for point in data_payload if isinstance(point, dict) and "y" in point]
+        voltages = [
+            float(point["x"]) for point in data_payload if isinstance(point, dict) and "x" in point
+        ]
+        currents = [
+            float(point["y"]) for point in data_payload if isinstance(point, dict) and "y" in point
+        ]
         if len(voltages) != len(currents):
             raise ValueError("chart point list 必須同時包含 x 與 y")
         return voltages, currents
@@ -288,43 +295,80 @@ def run_module(module_id: str, params_str: str, data_str: str) -> str:
 
     raise ValueError(f"unknown analysis module: {module_id}")
 
+
 import grpc
 import labflow_pb2
 import labflow_pb2_grpc
 
+
 class AgentEventStreamClient:
     """gRPC Bidirectional stream stub for UI events and Analysis results."""
+
     def __init__(self, session_id: str):
         self.session_id = session_id
         # In real scenario: connect to host service
-        self.channel = grpc.insecure_channel('localhost:50051')
+        self.channel = grpc.insecure_channel("localhost:50051")
         self.stub = labflow_pb2_grpc.AgentServiceStub(self.channel)
-        
+
     def stream_events(self, request_iterator):
         """Processes incoming AgentEventRequests and yields AgentEventResponses."""
         for req in request_iterator:
             try:
                 # E.g. trigger an analysis run based on a UI click event
-                payload_str = req.payload.decode('utf-8')
+                payload_str = req.payload.decode("utf-8")
                 event_data = json.loads(payload_str)
-                
+
                 module_id = event_data.get("module_id", "")
                 params_str = json.dumps(event_data.get("params", {}))
                 data_str = json.dumps(event_data.get("data", {}))
-                
+
                 result_json = run_module(module_id, params_str, data_str)
-                
-                response = labflow_pb2.AgentEventResponse(
-                    session_id=self.session_id,
-                    response_type="ANALYSIS_RESULT",
-                    payload=result_json.encode('utf-8')
-                )
+                result_dict = json.loads(result_json)
+
+                # High-efficiency binary serialization for chart data
+                if (
+                    "data" in result_dict
+                    and "x" in result_dict["data"]
+                    and "y" in result_dict["data"]
+                ):
+                    x_data = result_dict["data"]["x"]
+                    y_data = result_dict["data"]["y"]
+                    binary_payload = serialize_chart_data(x_data, y_data)
+
+                    chart_state = labflow_pb2.ChartState(
+                        chart_id=event_data.get("chart_id", "default"),
+                        type="XY_SERIES",
+                        data=binary_payload,
+                    )
+
+                    response = labflow_pb2.AgentEventResponse(
+                        session_id=self.session_id,
+                        response_type="CHART_STATE",
+                        payload=chart_state.SerializeToString(),
+                    )
+                else:
+                    response = labflow_pb2.AgentEventResponse(
+                        session_id=self.session_id,
+                        response_type="ANALYSIS_RESULT",
+                        payload=result_json.encode("utf-8"),
+                    )
                 yield response
             except Exception as e:
                 error_response = labflow_pb2.AgentEventResponse(
                     session_id=self.session_id,
                     response_type="ERROR",
-                    payload=json.dumps({"error": str(e)}).encode('utf-8')
+                    payload=json.dumps({"error": str(e)}).encode("utf-8"),
                 )
                 yield error_response
 
+
+import struct
+
+
+def serialize_chart_data(x_data: list[float], y_data: list[float]) -> bytes:
+    # Use struct to pack arrays of doubles efficiently
+    n = len(x_data)
+    packed_x = struct.pack(f"<{n}d", *x_data)
+    packed_y = struct.pack(f"<{n}d", *y_data)
+    # Prefix with length of points
+    return struct.pack("<I", n) + packed_x + packed_y

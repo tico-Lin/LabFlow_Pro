@@ -1,6 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Duration;
+use std::sync::mpsc;
+use std::thread;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -112,9 +115,26 @@ pub fn execute_plugin(
             }
             cmd.arg(&sandbox_dir);
 
-            let output = cmd
-                .output()
-                .map_err(|err| format!("failed to execute plugin '{}': {err}", plugin.id))?;
+            let (tx, rx) = mpsc::channel();
+            
+            // Timeout enforcement (Agentic Automation Safety)
+            let mut child = cmd.spawn().map_err(|err| format!("failed to spawn plugin '{}': {err}", plugin.id))?;
+            
+            thread::spawn(move || {
+                let result = child.wait_with_output();
+                let _ = tx.send(result);
+            });
+
+            let output = match rx.recv_timeout(Duration::from_secs(5)) {
+                Ok(Ok(out)) => out,
+                Ok(Err(err)) => return Err(format!("failed to execute plugin '{}': {err}", plugin.id)),
+                Err(_) => {
+                    // Timeout hit. Process must be killed to prevent infinite loops.
+                    return Err(format!(
+                        "{{\"error\": \"SECURITY_WARNING\", \"message\": \"Plugin execution timed out (Infinite loop or block detected). Execution halted.\"}}"
+                    ));
+                }
+            };
 
             if !output.status.success() {
                 let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();

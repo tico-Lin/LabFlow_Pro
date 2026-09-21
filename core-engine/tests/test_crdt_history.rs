@@ -147,3 +147,40 @@ fn stress_test_100k_mixed_operations() {
     assert!(serialized.len() > 0);
     // Real-world we'd check compression ratio.
 }
+#[test]
+fn stress_test_10k_spreadsheet_note() {
+    let peer = fixed_peer(1);
+    let mut clock = LamportClock::new();
+
+    let node1 = fixed_node(1); // Spreadsheet
+    let node2 = fixed_node(2); // Note
+
+    let mut ops = vec![
+        insert_node(node1, "Spreadsheet", clock.tick().0, peer),
+        insert_node(node2, "NoteEditor", clock.tick().0, peer),
+    ];
+
+    for i in 0..10_000 {
+        let pos = format!("0.{:04}", i);
+        ops.push(insert_text(node1, &pos, &format!("Cell {}", i), clock.tick().0, peer));
+        ops.push(insert_text(node2, &pos, &format!("Text {}", i), clock.tick().0, peer));
+    }
+
+    let start = std::time::Instant::now();
+    let state = merge(&ops, &[]);
+    let build_duration = start.elapsed();
+    assert_eq!(state.nodes[&node1].text_sequence.len(), 10_000);
+
+    // Rollback test
+    let op_to_undo = ops.last().unwrap().id;
+    ops.push(undo_operation(op_to_undo, clock.tick().0, peer));
+    
+    let rollback_start = std::time::Instant::now();
+    let state_after_rollback = merge(&ops, &[]);
+    let rollback_duration = rollback_start.elapsed();
+
+    println!("Build duration: {:?}", build_duration);
+    println!("Rollback duration: {:?}", rollback_duration);
+
+    assert!(rollback_duration.as_millis() < 50, "Rollback took too long");
+}

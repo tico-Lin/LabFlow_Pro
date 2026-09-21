@@ -1,103 +1,100 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AstNode {
+    Text { content: String },
+    InlineMath { expression: String },
+    BlockMath { expression: String },
+    Chemical { format: String, payload: String },
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarkdownAst {
-    pub content: String,
+    pub nodes: Vec<AstNode>,
 }
 
-pub fn validate_latex(input: &str) -> Result<(), String> {
-    let mut in_inline_math = false;
-    let mut in_block_math = false;
+pub fn parse_extended_markdown(input: &str) -> Result<MarkdownAst, String> {
+    let mut nodes = Vec::new();
+    let mut current_text = String::new();
     let mut chars = input.chars().peekable();
-    
-    let mut block_envs: Vec<String> = Vec::new();
 
     while let Some(c) = chars.next() {
         if c == '$' {
             if let Some(&'$') = chars.peek() {
-                // $$ block math
-                chars.next();
-                in_block_math = !in_block_math;
+                chars.next(); 
+                if !current_text.is_empty() {
+                    nodes.push(AstNode::Text { content: current_text.clone() });
+                    current_text.clear();
+                }
+                let mut expr = String::new();
+                while let Some(mc) = chars.next() {
+                    if mc == '$' {
+                        if chars.peek() == Some(&'$') {
+                            chars.next();
+                            break;
+                        } else {
+                            expr.push(mc);
+                        }
+                    } else {
+                        expr.push(mc);
+                    }
+                }
+                nodes.push(AstNode::BlockMath { expression: expr });
             } else {
-                // $ inline math
-                in_inline_math = !in_inline_math;
+                if !current_text.is_empty() {
+                    nodes.push(AstNode::Text { content: current_text.clone() });
+                    current_text.clear();
+                }
+                let mut expr = String::new();
+                while let Some(mc) = chars.next() {
+                    if mc == '$' {
+                        break;
+                    } else {
+                        expr.push(mc);
+                    }
+                }
+                nodes.push(AstNode::InlineMath { expression: expr });
             }
         } else if c == '\\' {
+            let mut is_cmd = false;
             let mut cmd = String::new();
-            while let Some(&next_c) = chars.peek() {
-                if next_c.is_alphabetic() {
-                    cmd.push(chars.next().unwrap());
+            let mut peek_chars = chars.clone();
+            while let Some(pc) = peek_chars.next() {
+                if pc.is_alphabetic() {
+                    cmd.push(pc);
+                } else if pc == '{' {
+                    is_cmd = true;
+                    break;
                 } else {
                     break;
                 }
             }
-            if cmd == "begin" {
-                if chars.next() == Some('{') {
-                    let mut env = String::new();
-                    while let Some(env_c) = chars.next() {
-                        if env_c == '}' { break; }
-                        env.push(env_c);
-                    }
-                    block_envs.push(env);
+
+            if is_cmd && cmd == "smiles" {
+                if !current_text.is_empty() {
+                    nodes.push(AstNode::Text { content: current_text.clone() });
+                    current_text.clear();
                 }
-            } else if cmd == "end" {
-                if chars.next() == Some('{') {
-                    let mut env = String::new();
-                    while let Some(env_c) = chars.next() {
-                        if env_c == '}' { break; }
-                        env.push(env_c);
-                    }
-                    if let Some(last_env) = block_envs.pop() {
-                        if last_env != env {
-                            return Err(format!("LaTeX syntax error: mismatched environment. Expected \\end{{{}}}, found \\end{{{}}}", last_env, env));
-                        }
-                    } else {
-                        return Err(format!("LaTeX syntax error: \\end{{{}}} without matching \\begin", env));
-                    }
+                for _ in 0..cmd.len() { chars.next(); }
+                chars.next(); // consume '{'
+                let mut payload = String::new();
+                while let Some(pc) = chars.next() {
+                    if pc == '}' { break; }
+                    payload.push(pc);
                 }
+                nodes.push(AstNode::Chemical { format: "SMILES".to_string(), payload });
+            } else {
+                current_text.push(c);
             }
+        } else {
+            current_text.push(c);
         }
     }
 
-    if in_inline_math {
-        return Err("LaTeX syntax error: unclosed inline math ($)".to_string());
-    }
-    if in_block_math {
-        return Err("LaTeX syntax error: unclosed block math ($$)".to_string());
-    }
-    if !block_envs.is_empty() {
-        return Err(format!("LaTeX syntax error: unclosed environment \\begin{{{}}}", block_envs.last().unwrap()));
+    if !current_text.is_empty() {
+        nodes.push(AstNode::Text { content: current_text });
     }
 
-    Ok(())
+    Ok(MarkdownAst { nodes })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_valid_latex() {
-        assert!(validate_latex("Here is some math: $E=mc^2$ and block $$a^2 + b^2 = c^2$$").is_ok());
-        assert!(validate_latex("\\begin{equation} x = 1 \\end{equation}").is_ok());
-    }
-
-    #[test]
-    fn test_invalid_latex_unclosed_inline() {
-        let err = validate_latex("This is $ unclosed").unwrap_err();
-        assert_eq!(err, "LaTeX syntax error: unclosed inline math ($)");
-    }
-
-    #[test]
-    fn test_invalid_latex_mismatched_env() {
-        let err = validate_latex("\\begin{equation} x = 1 \\end{matrix}").unwrap_err();
-        assert_eq!(err, "LaTeX syntax error: mismatched environment. Expected \\end{equation}, found \\end{matrix}");
-    }
-
-    #[test]
-    fn test_invalid_latex_unclosed_env() {
-        let err = validate_latex("\\begin{align} x = 1").unwrap_err();
-        assert_eq!(err, "LaTeX syntax error: unclosed environment \\begin{align}");
-    }
-}
-
