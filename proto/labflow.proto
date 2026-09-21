@@ -143,3 +143,23 @@ message AgentEventResponse {
   string response_type = 2; // e.g., "ANALYSIS_RESULT", "CODE_GENERATION"
   bytes payload = 3;
 }
+
+
+// CRDT Operations
+message CrdtOperation {
+    enum OpType {
+        INSERT = 0;
+        DELETE = 1;
+        UPDATE = 2;
+    }
+    OpType op_type = 1;
+    string id = 2;        // Unique id of the character/element
+    string parent_id = 3; // To establish tree structure or sequence
+    uint32 index = 4;     // For arrays/strings
+    string value = 5;     // Content to insert/update
+}
+
+message CrdtDeltaChunk {
+    string document_id = 1;
+    repeated CrdtOperation operations = 2;
+}

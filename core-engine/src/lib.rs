@@ -217,3 +217,5 @@ fn core_engine(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 pub mod markdown_ast;
+
+pub mod proto;

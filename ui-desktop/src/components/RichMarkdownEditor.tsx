@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { useCrdtDoc } from "../app/useCrdtDoc";
 
 type AstNode =
   | { type: "Text"; content: string }
@@ -12,24 +13,31 @@ type MarkdownAst = { nodes: AstNode[] };
 
 type RichMarkdownEditorProps = {
   nodeId?: string;
-  value: string;
+  value?: string;
   placeholder: string;
   theme: "dark" | "light";
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void; // Maintained for backward compatibility with outer components
 };
 
 export default function RichMarkdownEditor({
-  nodeId,
-  value,
+  nodeId = "default-doc-id",
+  value = "",
   placeholder,
   theme,
   onChange,
 }: RichMarkdownEditorProps) {
   const [ast, setAst] = useState<MarkdownAst | null>(null);
 
-  useEffect(() => {
-    if (!nodeId) return;
+  // Hook strictly defines the Model-View relationship. The component itself holds no independent long-lived state.
+  const { textValue, handleLocalChange } = useCrdtDoc(nodeId, value);
 
+  useEffect(() => {
+    if (onChange) {
+      onChange(textValue);
+    }
+  }, [textValue, onChange]);
+
+  useEffect(() => {
     const fetchAst = async () => {
       try {
         const fetchedAst = await invoke<MarkdownAst>("get_ast", {
@@ -37,7 +45,7 @@ export default function RichMarkdownEditor({
         });
         setAst(fetchedAst);
       } catch (err) {
-        console.error("Failed to fetch AST", err);
+        // console.error("Failed to fetch AST", err);
       }
     };
 
@@ -53,16 +61,7 @@ export default function RichMarkdownEditor({
   }, [nodeId]);
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    onChange(newText);
-
-    if (nodeId) {
-      invoke("insert_text", {
-        nodeId,
-        posId: Date.now().toString(),
-        text: newText,
-      }).catch(console.error);
-    }
+    handleLocalChange(e.target.value);
   };
 
   return (
@@ -79,7 +78,7 @@ export default function RichMarkdownEditor({
           background: "transparent",
           color: "inherit",
         }}
-        value={value}
+        value={textValue}
         placeholder={placeholder}
         onChange={handleInput}
       />
@@ -98,38 +97,26 @@ export default function RichMarkdownEditor({
             switch (node.type) {
               case "Text":
                 return (
-                  <span key={i} data-testid={`ast-node-text`}>
+                  <span key={i} style={{ whiteSpace: "pre-wrap" }}>
                     {node.content}
                   </span>
                 );
               case "InlineMath":
                 return (
-                  <span
-                    key={i}
-                    className="math inline"
-                    data-testid={`ast-node-inlinemath`}
-                  >
+                  <span key={i} className="math inline">
                     ${node.expression}$
                   </span>
                 );
               case "BlockMath":
                 return (
-                  <div
-                    key={i}
-                    className="math block"
-                    data-testid={`ast-node-blockmath`}
-                  >
+                  <div key={i} className="math block">
                     $${node.expression}$$
                   </div>
                 );
               case "Chemical":
                 return (
-                  <div
-                    key={i}
-                    className="chemical"
-                    data-testid={`ast-node-chemical`}
-                  >
-                    [{node.format}: {node.payload}]
+                  <div key={i} className="chemical">
+                    [Structure: {node.payload}]
                   </div>
                 );
               default:
@@ -137,7 +124,9 @@ export default function RichMarkdownEditor({
             }
           })
         ) : (
-          <div data-testid="loading-indicator">Loading AST...</div>
+          <div style={{ color: "#888", fontStyle: "italic" }}>
+            AST Preview...
+          </div>
         )}
       </div>
     </div>

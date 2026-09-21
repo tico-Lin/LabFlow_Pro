@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod document_controller;
+mod commands;
 use std::{path::PathBuf, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 
 use core_engine::crdt::{self, LamportClock, NodePayload, OpKind, Operation};
@@ -774,6 +776,7 @@ fn main() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .manage(document_controller::DocumentController::new())
         .manage(EngineBridgeState {
             inner: Mutex::new(EngineReplicaState {
                 peer_id: Uuid::new_v4(),
@@ -782,6 +785,10 @@ fn main() {
             }),
         })
         .invoke_handler(tauri::generate_handler![
+            commands::init_document_stream,
+            commands::apply_crdt_delta,
+            commands::close_document,
+            commands::get_document_snapshot,
             fetch_graph_state,
             ingest_real_data,
             analyze_cv_data,

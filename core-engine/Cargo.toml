@@ -24,8 +24,14 @@ wasmtime = "24.0.0"
 lz4_flex = "0.14.0"
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.24.0"
+prost = { workspace = true }
+bytes = "1"
 
 [dev-dependencies]
 tempfile = "3.27.0"
 tokio = { workspace = true }
 wat = "1.259.0"
+
+[build-dependencies]
+prost-build = "0.13"
+protoc-bin-vendored = "3.0.0"

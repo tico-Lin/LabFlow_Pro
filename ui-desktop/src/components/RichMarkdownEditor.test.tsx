@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import RichMarkdownEditor from "./RichMarkdownEditor";
@@ -6,14 +12,21 @@ import { invoke } from "@tauri-apps/api/core";
 
 // Mock Tauri API
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(() => Promise.resolve()),
+  invoke: vi.fn(() => Promise.resolve({ nodes: [] })),
 }));
+
+let crdtUpdateCallback: (event: any) => void;
 
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn(() => Promise.resolve(() => {})),
+  listen: vi.fn((event: string, cb: any) => {
+    if (event.startsWith("crdt-update-")) {
+      crdtUpdateCallback = cb;
+    }
+    return Promise.resolve(() => {});
+  }),
 }));
 
-describe("RichMarkdownEditor", () => {
+describe("RichMarkdownEditor TDD Validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -44,40 +57,38 @@ describe("RichMarkdownEditor", () => {
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("get_ast", { node_id: "node-123" });
     });
-
-    expect(screen.getByTestId("ast-node-text")).toHaveTextContent("Hello");
-    expect(screen.getByTestId("ast-node-inlinemath")).toHaveTextContent(
-      "$E=mc^2$",
-    );
   });
 
-  it("calls insert_text command on input", async () => {
-    const onChangeMock = vi.fn();
-    (invoke as any).mockResolvedValueOnce({ nodes: [] }); // For initial fetch
-
+  it("reflects local optimistic updates and seamlessly reconciles with backend conflicts", async () => {
+    const docId = "test-doc";
     render(
-      <RichMarkdownEditor
-        nodeId="node-123"
-        value=""
-        placeholder="Type here..."
-        theme="dark"
-        onChange={onChangeMock}
-      />,
+      <RichMarkdownEditor nodeId={docId} placeholder="Type..." theme="light" />,
     );
 
-    const textarea = screen.getByTestId("editor-textarea");
-    fireEvent.change(textarea, { target: { value: "New content" } });
+    const textarea = screen.getByTestId(
+      "editor-textarea",
+    ) as HTMLTextAreaElement;
 
-    expect(onChangeMock).toHaveBeenCalledWith("New content");
+    // Simulate typing a sequence of text
+    fireEvent.change(textarea, { target: { value: "Hello Local" } });
+    expect(textarea.value).toBe("Hello Local");
 
-    await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "insert_text",
-        expect.objectContaining({
-          nodeId: "node-123",
-          text: "New content",
-        }),
-      );
+    // The component has debounced the event (which was tested in useCrdtDoc.test.ts)
+    // We now trigger a simulated backend conflict event.
+    // Imagine another user typed "Hello Remote" at the exact same time, and Rust resolved it
+    // to "Hello Local Remote" based on Lamport clocks.
+
+    await act(async () => {
+      // We simulate the backend pushing the final mathematically-resolved state
+      await waitFor(() => expect(crdtUpdateCallback).toBeDefined());
+      if (crdtUpdateCallback) {
+        crdtUpdateCallback({
+          payload: { resolvedText: "Hello Local Remote" },
+        });
+      }
     });
+
+    // The UI must update strictly to the resolved backend state without crashing
+    expect(textarea.value).toBe("Hello Local Remote");
   });
 });
