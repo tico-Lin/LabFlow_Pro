@@ -153,7 +153,7 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
     if (gl) {
       drawChartWebGL(gl, data, analysisResultData, peakIndex, instrumentFormat, t, theme, canvas.width, canvas.height, dpr);
     } else {
-      console.error("WebGL not supported");
+      console.error(t("chart.error.webgl_not_supported") || "WebGL not supported");
     }
   }, [analysisResultData, data, instrumentFormat, peakIndex, size.height, size.width, t, themeName]);
 

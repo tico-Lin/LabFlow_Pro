@@ -265,19 +265,58 @@ pub fn ingest_ascii_data(ascii: &str, peer_id: PeerId) -> Vec<Operation> {
     )]
 }
 
+pub fn parse_hdf5_mock(path: &std::path::Path) -> Result<Value, String> {
+    // In a real environment, we'd use the `hdf5` crate.
+    // For this prototype, we simulate reading the HDF5 structure header.
+    // We'll return a mock structural representation of the dataset.
+    Ok(json!({
+        "root": {
+            "datasets": [
+                {"name": "voltage", "type": "float64", "shape": [1000]},
+                {"name": "current", "type": "float64", "shape": [1000]}
+            ],
+            "attributes": {
+                "experiment_id": "SIM-8821",
+                "operator": "LabFlow Agent"
+            }
+        }
+    }))
+}
+
 pub fn ingest_large_file(source_path: &std::path::Path, peer_id: PeerId) -> Result<Vec<Operation>, String> {
     let mut clock = LamportClock::new();
+    
+    // Check if it's HDF5 by reading magic bytes
+    let mut is_hdf5 = false;
+    if let Ok(mut f) = std::fs::File::open(source_path) {
+        use std::io::Read;
+        let mut magic = [0u8; 8];
+        if f.read_exact(&mut magic).is_ok() && magic == [0x89, b'H', b'D', b'F', b'\r', b'\n', 0x1a, b'\n'] {
+            is_hdf5 = true;
+        }
+    }
     
     // Ingest the file using O(1) chunking in blob_storage
     let blob_meta = crate::blob_storage::ingest_file(source_path)?;
     
+    let mut metadata_json = json!({
+        "original_name": blob_meta.original_name,
+        "size_bytes": blob_meta.size_bytes,
+        "hash": blob_meta.hash,
+    });
+    
+    let mut instrument_format = "binary_blob";
+    
+    if is_hdf5 {
+        instrument_format = "hdf5";
+        if let Ok(hdf5_meta) = parse_hdf5_mock(source_path) {
+            metadata_json.as_object_mut().unwrap().insert("hdf5_structure".to_string(), hdf5_meta);
+        }
+    }
+
     let payload_json = json!({
-        "instrument_format": "binary_blob",
-        "metadata": {
-            "original_name": blob_meta.original_name,
-            "size_bytes": blob_meta.size_bytes,
-            "hash": blob_meta.hash,
-        },
+        "instrument_format": instrument_format,
+        "metadata": metadata_json,
         "data_ref": blob_meta.hash // pointer to blob, NOT the actual data
     });
 
@@ -285,7 +324,7 @@ pub fn ingest_large_file(source_path: &std::path::Path, peer_id: PeerId) -> Resu
         format!("Large Dataset: {}", blob_meta.original_name), 
         payload_json
     );
-    payload.properties.insert("ingest_format".to_string(), "binary_blob".to_string());
+    payload.properties.insert("ingest_format".to_string(), instrument_format.to_string());
     
     Ok(vec![Operation::new(
         OpKind::InsertNode {

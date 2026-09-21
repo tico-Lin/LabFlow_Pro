@@ -8,18 +8,28 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/labflow/host-service/internal/agent"
+	pb "github.com/labflow/host-service/gen/labflow/v1"
 	"google.golang.org/grpc"
 )
 
 // Server holds gRPC server state.
 type Server struct {
-	grpc *grpc.Server
+	grpc        *grpc.Server
+	hostService *agent.HostService
 }
 
 func NewServer() *Server {
+	grpcServer := grpc.NewServer()
+	hostService := agent.NewHostService(4) // 4 workers for task queue
+	
+	// pb.RegisterHostServiceServer(grpcServer, hostService) // Assumes gen pb code exists
+	
 	return &Server{
-		grpc: grpc.NewServer(),
+		grpc:        grpcServer,
+		hostService: hostService,
 	}
 }
 
@@ -49,10 +59,12 @@ func (s *Server) Run() error {
 	case <-ctx.Done():
 		slog.Info("shutting down gracefully")
 		syncer.Stop()
+		s.hostService.Stop()
 		s.grpc.GracefulStop()
 		return nil
 	case err := <-errCh:
 		syncer.Stop()
+		s.hostService.Stop()
 		return err
 	}
 }

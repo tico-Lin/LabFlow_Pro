@@ -427,6 +427,96 @@ fn delete_node(
 }
 
 #[tauri::command]
+fn apply_text_delta(
+    window: Window,
+    state: State<'_, EngineBridgeState>,
+    node_id: String,
+    pos_id: String,
+    text: Option<String>,
+) -> Result<(), String> {
+    let node_id = Uuid::parse_str(&node_id).map_err(|err| format!("invalid node id: {err}"))?;
+    
+    let mut bridge = state
+        .inner
+        .lock()
+        .map_err(|_| "failed to acquire graph operation log lock".to_string())?;
+
+    let op_kind = if let Some(t) = text {
+        OpKind::InsertText { node_id, pos_id, text: t }
+    } else {
+        OpKind::DeleteText { node_id, pos_id }
+    };
+
+    let op = Operation::new(
+        op_kind,
+        bridge.clock.tick(),
+        bridge.peer_id,
+    );
+
+    let op_id = op.id.to_string();
+    bridge.ops_log.push(op);
+    drop(bridge);
+
+    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    Ok(())
+}
+
+#[tauri::command]
+fn apply_spreadsheet_delta(
+    window: Window,
+    state: State<'_, EngineBridgeState>,
+    node_id: String,
+    delta_data: Vec<u8>,
+) -> Result<(), String> {
+    let node_id = Uuid::parse_str(&node_id).map_err(|err| format!("invalid node id: {err}"))?;
+    
+    let mut bridge = state
+        .inner
+        .lock()
+        .map_err(|_| "failed to acquire graph operation log lock".to_string())?;
+
+    let op = Operation::new(
+        OpKind::DeltaMutation { node_id, delta_data },
+        bridge.clock.tick(),
+        bridge.peer_id,
+    );
+
+    let op_id = op.id.to_string();
+    bridge.ops_log.push(op);
+    drop(bridge);
+
+    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    Ok(())
+}
+
+#[tauri::command]
+fn undo_operation(
+    window: Window,
+    state: State<'_, EngineBridgeState>,
+    target_id: String,
+) -> Result<(), String> {
+    let target_id = Uuid::parse_str(&target_id).map_err(|err| format!("invalid target op id: {err}"))?;
+    
+    let mut bridge = state
+        .inner
+        .lock()
+        .map_err(|_| "failed to acquire graph operation log lock".to_string())?;
+
+    let op = Operation::new(
+        OpKind::UndoOperation { target_id },
+        bridge.clock.tick(),
+        bridge.peer_id,
+    );
+
+    let op_id = op.id.to_string();
+    bridge.ops_log.push(op);
+    drop(bridge);
+
+    emit_graph_updated(&window, "graph_changed", vec![op_id])?;
+    Ok(())
+}
+
+#[tauri::command]
 fn link_nodes(
     window: Window,
     state: State<'_, EngineBridgeState>,
@@ -637,7 +727,10 @@ fn main() {
             link_nodes,
             update_file_metadata,
             list_files,
-            get_file_node
+            get_file_node,
+            apply_text_delta,
+            apply_spreadsheet_delta,
+            undo_operation
         ])
         .run(tauri::generate_context!())
         .expect("error while running LabFlow desktop shell");

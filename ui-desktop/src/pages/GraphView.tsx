@@ -157,6 +157,7 @@ export default function GraphView({
             <aside className="app-surface graph-side-panel">
               {selectedNodeType === "note" ? (
                 <NoteEditor
+                  nodeId={selectedNodeId || undefined}
                   title={noteDraft.title}
                   content={noteDraft.content}
                   saving={noteSaving}

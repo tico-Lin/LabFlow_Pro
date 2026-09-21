@@ -8,12 +8,15 @@ import DataEditor, {
 import "@glideapps/glide-data-grid/dist/index.css";
 import type { SpreadsheetGridData } from "./types";
 
+import { invoke } from "@tauri-apps/api/core";
+
 export type { CellPointer, SpreadsheetGridData } from "./types";
 
 // Phase A: Setup & Architecture (Virtualization with 1,000,000 rows)
 // We use glide-data-grid for zero DOM lag Canvas rendering.
 
 export interface SpreadsheetGridProps {
+  nodeId?: string;
   data?: SpreadsheetGridData;
   rows?: number;
   cols?: number;
@@ -24,6 +27,7 @@ export interface SpreadsheetGridProps {
   focusCol?: number | null;
   resizable?: boolean;
   fillContainer?: boolean;
+  onCellEdited?: (col: number, row: number, newValue: string) => void;
 }
 
 export function createDemoSpreadsheetData(t: (key: string) => string): SpreadsheetGridData {
@@ -44,21 +48,25 @@ export function createDemoSpreadsheetData(t: (key: string) => string): Spreadshe
   };
 }
 
-export default function SpreadsheetGrid({ data, rows = 1_000_000, cols = 50 }: SpreadsheetGridProps) {
+import { useTranslation } from "../../i18n";
+
+export default function SpreadsheetGrid({ nodeId, data, rows = 1_000_000, cols = 50, onCellEdited }: SpreadsheetGridProps) {
+  const { t } = useTranslation();
   const gridRows = data?.rows ?? rows;
   const gridCols = data?.cols ?? cols;
 
   // 1. Define Columns
   const columns: GridColumn[] = React.useMemo(() => {
     const colsArray: GridColumn[] = [];
+    const prefix = t("spreadsheet.column_prefix") || "Col";
     for (let i = 0; i < gridCols; i++) {
       colsArray.push({
-        title: `Col ${i + 1}`,
+        title: `${prefix} ${i + 1}`,
         width: 100,
       });
     }
     return colsArray;
-  }, [gridCols]);
+  }, [gridCols, t]);
 
   // 2. Mock Data / Fetching Logic
   // For Phase A, we prove virtualization by dynamically generating cell data on the fly.
@@ -76,6 +84,27 @@ export default function SpreadsheetGrid({ data, rows = 1_000_000, cols = 50 }: S
       };
     },
     [data]
+  );
+
+  const handleCellEdited = useCallback(
+    (cell: Item, newValue: import("@glideapps/glide-data-grid").EditableGridCell) => {
+      const [col, row] = cell;
+      if (newValue.kind === GridCellKind.Text) {
+        if (onCellEdited) {
+          onCellEdited(col, row, newValue.data as string);
+        }
+        if (nodeId) {
+          // Send cell diff via Tauri
+          const encoder = new TextEncoder();
+          const deltaData = encoder.encode(JSON.stringify({ col, row, value: newValue.data }));
+          invoke("apply_spreadsheet_delta", {
+            nodeId,
+            deltaData: Array.from(deltaData)
+          }).catch(console.error);
+        }
+      }
+    },
+    [onCellEdited, nodeId]
   );
 
   // WebGL / WebGPU Rendering Context Hook
@@ -97,6 +126,7 @@ export default function SpreadsheetGrid({ data, rows = 1_000_000, cols = 50 }: S
       <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
         <DataEditor
           getCellContent={getData}
+          onCellEdited={handleCellEdited}
           columns={columns}
           rows={gridRows}
           smoothScrollX={true}

@@ -98,6 +98,33 @@ def get_available_modules() -> str:
             "description": "Automated Gaussian peak fitting for XRD or EIS data.",
             "supportedFormats": ["XRD", "CV", "CSV"],
             "parameters": []
+        },
+        {
+            "id": "savgol_filter",
+            "name": "Savitzky-Golay Smoothing",
+            "description": "Smooth data using a Savitzky-Golay filter.",
+            "supportedFormats": ["CV", "XRD", "CSV", "TXT"],
+            "parameters": [
+                {
+                    "key": "window_length",
+                    "name": "Window Length",
+                    "type": "number",
+                    "defaultValue": 11
+                },
+                {
+                    "key": "polyorder",
+                    "name": "Polynomial Order",
+                    "type": "number",
+                    "defaultValue": 2
+                }
+            ]
+        },
+        {
+            "id": "fft_analysis",
+            "name": "Fast Fourier Transform (FFT)",
+            "description": "Perform FFT on the dataset to analyze frequency components.",
+            "supportedFormats": ["CV", "CSV", "TXT"],
+            "parameters": []
         }
     ]
     return json.dumps(modules)
@@ -156,6 +183,41 @@ def fit_eis_xrd_peak(x_data: list[float], y_data: list[float]) -> dict:
         "C": float(C)
     }
 
+def apply_savgol_filter(x_data: list[float], y_data: list[float], window_length: int, polyorder: int) -> dict:
+    import scipy.signal
+    if len(y_data) < window_length:
+        window_length = len(y_data) if len(y_data) % 2 != 0 else len(y_data) - 1
+        if window_length <= polyorder:
+            raise ValueError("Dataset is too small for the specified window length and polyorder.")
+
+    smoothed_y = scipy.signal.savgol_filter(y_data, window_length, polyorder)
+    return {
+        "data": {
+            "x": x_data,
+            "y": smoothed_y.tolist()
+        }
+    }
+
+def apply_fft(x_data: list[float], y_data: list[float]) -> dict:
+    if len(x_data) < 2:
+        raise ValueError("Not enough data points for FFT")
+        
+    N = len(y_data)
+    # Assuming uniform spacing for sample spacing
+    T = x_data[1] - x_data[0]
+    if T == 0:
+        T = 1.0
+        
+    yf = np.fft.fft(y_data)
+    xf = np.fft.fftfreq(N, T)[:N//2]
+    
+    return {
+        "data": {
+            "x": xf.tolist(),
+            "y": (2.0/N * np.abs(yf[0:N//2])).tolist()
+        }
+    }
+
 
 
 def _load_json(payload: str) -> dict | list:
@@ -212,6 +274,18 @@ def run_module(module_id: str, params_str: str, data_str: str) -> str:
         result = fit_eis_xrd_peak(x_data, y_data)
         return json.dumps(result)
 
+    if module_id == "savgol_filter":
+        x_data, y_data = _extract_series(data_payload)
+        window_length = int(params.get("window_length", 11))
+        polyorder = int(params.get("polyorder", 2))
+        result = apply_savgol_filter(x_data, y_data, window_length, polyorder)
+        return json.dumps(result)
+
+    if module_id == "fft_analysis":
+        x_data, y_data = _extract_series(data_payload)
+        result = apply_fft(x_data, y_data)
+        return json.dumps(result)
+
     raise ValueError(f"unknown analysis module: {module_id}")
 
 import grpc
@@ -227,12 +301,30 @@ class AgentEventStreamClient:
         self.stub = labflow_pb2_grpc.AgentServiceStub(self.channel)
         
     def stream_events(self, request_iterator):
-        """Mock bidirectional stream processing."""
-        # return self.stub.AgentEventStream(request_iterator)
+        """Processes incoming AgentEventRequests and yields AgentEventResponses."""
         for req in request_iterator:
-            yield {
-                "session_id": self.session_id,
-                "response_type": "ACK_ANALYSIS",
-                "payload": b'{}'
-            }
+            try:
+                # E.g. trigger an analysis run based on a UI click event
+                payload_str = req.payload.decode('utf-8')
+                event_data = json.loads(payload_str)
+                
+                module_id = event_data.get("module_id", "")
+                params_str = json.dumps(event_data.get("params", {}))
+                data_str = json.dumps(event_data.get("data", {}))
+                
+                result_json = run_module(module_id, params_str, data_str)
+                
+                response = labflow_pb2.AgentEventResponse(
+                    session_id=self.session_id,
+                    response_type="ANALYSIS_RESULT",
+                    payload=result_json.encode('utf-8')
+                )
+                yield response
+            except Exception as e:
+                error_response = labflow_pb2.AgentEventResponse(
+                    session_id=self.session_id,
+                    response_type="ERROR",
+                    payload=json.dumps({"error": str(e)}).encode('utf-8')
+                )
+                yield error_response
 

@@ -106,6 +106,8 @@ impl WasmSandbox {
         let mut config = Config::new();
         config.consume_fuel(true);
         config.wasm_multi_memory(true);
+        config.wasm_backtrace_details(wasmtime::WasmBacktraceDetails::Disable);
+        config.wasm_backtrace(false);
 
         // Configure the per-linear-memory limit to trap OOM.
         let mut pooling_config = PoolingAllocationConfig::default();

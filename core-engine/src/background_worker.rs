@@ -129,3 +129,135 @@ fn current_unix_ts() -> i64 {
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
 }
+
+/// Spawns a background thread to upload pending CRDT operations to the HostService
+/// using an Exponential Backoff retry strategy.
+pub fn spawn_upload_daemon(db_path: PathBuf) {
+    thread::spawn(move || {
+        let mut backoff = Duration::from_millis(500);
+        let max_backoff = Duration::from_secs(60); // 1 minute max backoff
+
+        loop {
+            let mut success = true;
+
+            match Connection::open(&db_path) {
+                Ok(conn) => {
+                    // Try to fetch pending operations
+                    match run_upload_batch(&conn) {
+                        Ok(processed_count) => {
+                            if processed_count > 0 {
+                                // Reset backoff on success
+                                backoff = Duration::from_millis(500);
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("Upload batch failed: {err}");
+                            success = false;
+                        }
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to open DB for upload daemon: {err}");
+                    success = false;
+                }
+            }
+
+            if !success {
+                // Apply exponential backoff
+                thread::sleep(backoff);
+                backoff = calculate_next_backoff(backoff, max_backoff);
+            } else {
+                // If we succeeded but there might be no more work, sleep minimally
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+    });
+}
+
+fn run_upload_batch(conn: &Connection) -> rusqlite::Result<usize> {
+    // We assume operations are stored in an `ops_log` table with `uploaded = 0`
+    // Mock implementation for the queue processing:
+    let mut stmt = conn.prepare(
+        "SELECT id, payload FROM ops_log WHERE uploaded = 0 ORDER BY created_at ASC LIMIT ?",
+    );
+    
+    // If table doesn't exist yet, we just return 0 (it will be created by crdt initialization)
+    if stmt.is_err() {
+        return Ok(0);
+    }
+    
+    let mut stmt = stmt?;
+    let pending_rows = stmt.query_map(params![BATCH_SIZE], |row| {
+        let id: String = row.get(0)?;
+        let payload: String = row.get(1)?;
+        Ok((id, payload))
+    })?;
+
+    let mut processed_count = 0;
+    for row in pending_rows {
+        let (id, _payload) = row?;
+        
+        // Mock network upload to HostService (gRPC)
+        // In a real implementation, we'd use a tonic gRPC client here.
+        let upload_success = mock_network_upload(&id);
+        
+        if upload_success {
+            conn.execute(
+                "UPDATE ops_log SET uploaded = 1 WHERE id = ?",
+                params![id],
+            )?;
+            processed_count += 1;
+        } else {
+            // Stop processing this batch on first network failure to preserve order
+            return Err(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_IOERR),
+                Some("Network upload failed".to_string())
+            ));
+        }
+    }
+
+    Ok(processed_count)
+}
+
+fn mock_network_upload(_id: &str) -> bool {
+    // Simulate intermittent network failures
+    let current_time = current_unix_ts();
+    // E.g. fails every 5th second
+    current_time % 5 != 0
+}
+
+pub fn calculate_next_backoff(current_backoff: Duration, max_backoff: Duration) -> Duration {
+    (current_backoff * 2).min(max_backoff)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn test_exponential_backoff_calculation() {
+        let max_backoff = Duration::from_secs(60);
+        let mut backoff = Duration::from_millis(500);
+
+        backoff = calculate_next_backoff(backoff, max_backoff);
+        assert_eq!(backoff, Duration::from_millis(1000));
+
+        backoff = calculate_next_backoff(backoff, max_backoff);
+        assert_eq!(backoff, Duration::from_millis(2000));
+        
+        // Fast forward 4 more steps
+        for _ in 0..4 {
+            backoff = calculate_next_backoff(backoff, max_backoff);
+        }
+        assert_eq!(backoff, Duration::from_millis(32000));
+        
+        // Next step should cap at 60s
+        backoff = calculate_next_backoff(backoff, max_backoff);
+        assert_eq!(backoff, Duration::from_secs(60));
+        
+        // Stays capped
+        backoff = calculate_next_backoff(backoff, max_backoff);
+        assert_eq!(backoff, Duration::from_secs(60));
+    }
+}

@@ -2,6 +2,7 @@ import { useTranslation } from "../i18n";
 import RichMarkdownEditor from "./RichMarkdownEditor";
 
 type NoteEditorProps = {
+  nodeId?: string;
   title: string;
   content: string;
   saving?: boolean;
@@ -12,6 +13,7 @@ type NoteEditorProps = {
 };
 
 export default function NoteEditor({
+  nodeId,
   title,
   content,
   saving = false,
@@ -48,6 +50,7 @@ export default function NoteEditor({
         <label className="note-editor-field" style={{ display: "block", marginTop: "1rem" }}>
           <span>{t("note.contentLabel")}</span>
           <RichMarkdownEditor
+            nodeId={nodeId}
             value={content}
             onChange={onContentChange}
             theme="dark"

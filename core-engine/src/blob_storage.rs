@@ -142,6 +142,60 @@ pub fn read_blob(hash: &str) -> Result<Vec<u8>, String> {
     Ok(data)
 }
 
+/// Appends an incremental snapshot (delta) to a node's blob log.
+pub fn append_incremental_snapshot(node_id: &str, delta_data: &[u8]) -> Result<(), String> {
+    let blob_dir = ensure_blob_dir()?;
+    let snapshot_file = blob_dir.join(format!("{node_id}.snapshots"));
+    
+    // We use OpenOptions to append.
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&snapshot_file)
+        .map_err(|err| format!("failed to open snapshot file {}: {err}", snapshot_file.display()))?;
+        
+    let compressed_delta = lz4_flex::compress_prepend_size(delta_data);
+    let len = (compressed_delta.len() as u32).to_be_bytes();
+    
+    file.write_all(&len).map_err(|err| format!("failed to write len: {err}"))?;
+    file.write_all(&compressed_delta).map_err(|err| format!("failed to write delta: {err}"))?;
+    
+    Ok(())
+}
+
+/// Reads all incremental snapshots for a node.
+pub fn read_incremental_snapshots(node_id: &str) -> Result<Vec<Vec<u8>>, String> {
+    let blob_dir = ensure_blob_dir()?;
+    let snapshot_file = blob_dir.join(format!("{node_id}.snapshots"));
+    
+    if !snapshot_file.exists() {
+        return Ok(Vec::new());
+    }
+    
+    let mut file = File::open(&snapshot_file).map_err(|err| format!("failed to open snapshot file {}: {err}", snapshot_file.display()))?;
+    let mut data = Vec::new();
+    file.read_to_end(&mut data).map_err(|err| format!("failed to read snapshot file {}: {err}", snapshot_file.display()))?;
+    
+    let mut snapshots = Vec::new();
+    let mut cursor = 0;
+    while cursor < data.len() {
+        if cursor + 4 > data.len() {
+            break;
+        }
+        let len = u32::from_be_bytes(data[cursor..cursor+4].try_into().unwrap()) as usize;
+        cursor += 4;
+        if cursor + len > data.len() {
+            break;
+        }
+        let decompressed = lz4_flex::decompress_size_prepended(&data[cursor..cursor+len])
+            .map_err(|err| format!("failed to decompress delta: {err}"))?;
+        snapshots.push(decompressed);
+        cursor += len;
+    }
+    
+    Ok(snapshots)
+}
+
 fn ensure_blob_dir() -> Result<PathBuf, String> {
     let cwd = std::env::current_dir()
         .map_err(|err| format!("failed to resolve current directory: {err}"))?;

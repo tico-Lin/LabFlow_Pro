@@ -20,7 +20,7 @@ thiserror = { workspace = true }
 tracing   = { workspace = true }
 sha2 = "0.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
-wasmtime = "22.0.0"
+wasmtime = "24.0.0"
 lz4_flex = "0.14.0"
 
 [dev-dependencies]

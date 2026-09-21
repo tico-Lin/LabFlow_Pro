@@ -195,6 +195,24 @@ pub enum OpKind {
         node_id: NodeId,
         delta_data: Vec<u8>,
     },
+
+    /// Insert text at a specific fractional index.
+    InsertText {
+        node_id: NodeId,
+        pos_id: String,
+        text: String,
+    },
+
+    /// Delete text at a specific fractional index.
+    DeleteText {
+        node_id: NodeId,
+        pos_id: String,
+    },
+
+    /// Tombstone an operation to revert its effect.
+    UndoOperation {
+        target_id: OpId,
+    },
 }
 
 /// A single CRDT operation with its causal metadata.
@@ -257,6 +275,16 @@ pub struct NodeState {
     /// Sort key of the winning operation, kept for future delta merges.
     pub winner_ts:   LamportTs,
     pub winner_peer: PeerId,
+    /// Ordered map of fractional index -> text content
+    pub text_sequence: BTreeMap<String, String>,
+    /// Tombstone set for deleted fractional indices
+    pub deleted_text_pos: HashSet<String>,
+}
+
+impl NodeState {
+    pub fn get_text(&self) -> String {
+        self.text_sequence.values().cloned().collect::<Vec<_>>().join("")
+    }
 }
 
 /// Live state of a directed edge.
@@ -288,6 +316,8 @@ pub struct GraphState {
     /// reconstruct the full `GraphState` at any time by calling
     /// `merge(&log, &[])`.
     pub log: Vec<Operation>,
+    /// Set of operations that have been undone
+    pub undone_ops: HashSet<OpId>,
 }
 
 impl GraphState {
@@ -298,6 +328,7 @@ impl GraphState {
             edges:         HashMap::new(),
             deleted_edges: HashSet::new(),
             log:           Vec::new(),
+            undone_ops:    HashSet::new(),
         }
     }
 
@@ -311,6 +342,7 @@ impl GraphState {
                 label: node.payload.label.clone(),
                 properties: node.payload.properties.clone(),
                 content: node.payload.content.clone(),
+                text_content: node.get_text(),
             })
             .collect();
         nodes.sort_unstable_by_key(|node| node.id);
@@ -351,6 +383,8 @@ pub struct NodeSnapshot {
     pub properties: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<JsonValue>,
+    #[serde(default)]
+    pub text_content: String,
 }
 
 /// Serializable edge view for frontend IPC.
@@ -444,11 +478,26 @@ pub fn merge(ops_a: &[Operation], ops_b: &[Operation]) -> GraphState {
     // which is the foundation of convergence.
     log.sort_unstable();
 
-    // ── 3. Replay in causal order ────────────────────────────────────────────
+    // ── 3. First pass: collect undone ops ────────────────────────────────────
+    let mut undone = HashSet::new();
+    for op in &log {
+        if let OpKind::UndoOperation { target_id } = &op.kind {
+            undone.insert(*target_id);
+        }
+    }
     let mut state     = GraphState::new();
+    state.undone_ops = undone;
+
     let mut edge_wips: HashMap<EdgeId, EdgeWip> = HashMap::new();
 
     for op in &log {
+        // Skip operations that have been undone, and don't process UndoOperation itself in apply_op
+        if state.undone_ops.contains(&op.id) {
+            continue;
+        }
+        if matches!(op.kind, OpKind::UndoOperation { .. }) {
+            continue;
+        }
         apply_op(&mut state, &mut edge_wips, op);
     }
 
@@ -490,6 +539,13 @@ fn apply_op(
                 });
 
             if wins {
+                let mut text_sequence = BTreeMap::new();
+                let mut deleted_text_pos = HashSet::new();
+                if let Some(existing) = state.nodes.get(node_id) {
+                    text_sequence = existing.text_sequence.clone();
+                    deleted_text_pos = existing.deleted_text_pos.clone();
+                }
+
                 state.nodes.insert(
                     *node_id,
                     NodeState {
@@ -497,6 +553,8 @@ fn apply_op(
                         payload:     payload.clone(),
                         winner_ts:   op.ts,
                         winner_peer: op.peer,
+                        text_sequence,
+                        deleted_text_pos,
                     },
                 );
             }
@@ -565,6 +623,32 @@ fn apply_op(
                 node.winner_peer = op.peer;
             }
         }
+        
+        OpKind::InsertText { node_id, pos_id, text } => {
+            if state.deleted_nodes.contains(node_id) {
+                return;
+            }
+            if let Some(node) = state.nodes.get_mut(node_id) {
+                if !node.deleted_text_pos.contains(pos_id) {
+                    node.text_sequence.insert(pos_id.clone(), text.clone());
+                }
+            } else {
+                // Node might not exist yet if ops are received out of order?
+                // For simplicity, we assume Node exists. We can create it if not, but typically we want causal ordering.
+            }
+        }
+
+        OpKind::DeleteText { node_id, pos_id } => {
+            if state.deleted_nodes.contains(node_id) {
+                return;
+            }
+            if let Some(node) = state.nodes.get_mut(node_id) {
+                node.text_sequence.remove(pos_id);
+                node.deleted_text_pos.insert(pos_id.clone());
+            }
+        }
+        
+        OpKind::UndoOperation { .. } => unreachable!(), // Filtered out in merge loop
     }
 }
 

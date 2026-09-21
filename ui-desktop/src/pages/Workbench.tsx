@@ -576,6 +576,7 @@ export default function Workbench({
               <div className="grid-drag-handle" />
               <div className="workbench-grid-item-body">
                 <SpreadsheetGrid
+                  nodeId={targetNodeId || undefined}
                   data={fileSpreadsheetData ?? spreadsheetData}
                   themeName={theme}
                   revision={revision}

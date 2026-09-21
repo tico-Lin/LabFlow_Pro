@@ -3,7 +3,11 @@ import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
 import { useEffect, useRef } from "react";
 
+import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "../i18n";
+
 type RichMarkdownEditorProps = {
+  nodeId?: string;
   value: string;
   placeholder: string;
   theme: "dark" | "light";
@@ -18,14 +22,20 @@ const toolbarItems: NonNullable<EditorOptions["toolbarItems"]> = [
   ["code", "codeblock"]
 ];
 
-export default function RichMarkdownEditor({ value, placeholder, theme, onChange }: RichMarkdownEditorProps) {
+export default function RichMarkdownEditor({ nodeId, value, placeholder, theme, onChange }: RichMarkdownEditorProps) {
+  const { t } = useTranslation();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<ToastEditorInstance | null>(null);
   const onChangeRef = useRef(onChange);
+  const nodeIdRef = useRef(nodeId);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    nodeIdRef.current = nodeId;
+  }, [nodeId]);
 
   useEffect(() => {
     if (!hostRef.current) {
@@ -47,7 +57,17 @@ export default function RichMarkdownEditor({ value, placeholder, theme, onChange
       theme: theme === "dark" ? "dark" : undefined,
       events: {
         change: () => {
-          onChangeRef.current(editor.getMarkdown());
+          const newMarkdown = editor.getMarkdown();
+          onChangeRef.current(newMarkdown);
+          
+          if (nodeIdRef.current) {
+            // Emitting full text as a delta for Phase 1 simulation
+            invoke("apply_text_delta", {
+              nodeId: nodeIdRef.current,
+              posId: Date.now().toString(),
+              text: newMarkdown
+            }).catch(console.error);
+          }
         }
       }
     });
@@ -58,11 +78,11 @@ export default function RichMarkdownEditor({ value, placeholder, theme, onChange
     const initWasmEngine = async () => {
       try {
         // Mock loading of WASM parser
-        console.log("Loading WASM LaTeX/Markdown engine...");
+        console.log(t("editor.info.loading_wasm") || "Loading WASM LaTeX/Markdown engine...");
         // const wasm = await import('wasm-latex-markdown');
         // await wasm.init();
       } catch (err) {
-        console.error("Failed to load WASM engine", err);
+        console.error(t("editor.error.failed_wasm") || "Failed to load WASM engine", err);
       }
     };
     void initWasmEngine();
