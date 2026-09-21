@@ -691,6 +691,62 @@ fn get_file_node(db_state: State<'_, DbState>, id: String) -> Result<serde_json:
     row.ok_or_else(|| "file node not found".to_string())
 }
 
+#[tauri::command]
+fn get_ast(
+    state: State<'_, EngineBridgeState>,
+    node_id: String,
+) -> Result<core_engine::markdown_ast::MarkdownAst, String> {
+    let node_id = Uuid::parse_str(&node_id).map_err(|err| format!("invalid node id: {err}"))?;
+    let bridge = state.inner.lock().map_err(|_| "failed to lock".to_string())?;
+    
+    let graph = crdt::merge(&bridge.ops_log, &[]);
+    let node = graph.nodes.get(&node_id).ok_or_else(|| "node not found".to_string())?;
+    let text = node.get_text();
+    
+    core_engine::markdown_ast::parse_extended_markdown(&text)
+}
+
+#[tauri::command]
+fn insert_text(
+    window: Window,
+    state: State<'_, EngineBridgeState>,
+    node_id: String,
+    pos_id: String,
+    text: String,
+) -> Result<(), String> {
+    apply_text_delta(window, state, node_id, pos_id, Some(text))
+}
+
+#[tauri::command]
+fn delete_text(
+    window: Window,
+    state: State<'_, EngineBridgeState>,
+    node_id: String,
+    pos_id: String,
+) -> Result<(), String> {
+    apply_text_delta(window, state, node_id, pos_id, None)
+}
+
+#[cfg(test)]
+mod ipc_tests {
+    use super::*;
+    use core_engine::markdown_ast::{AstNode, MarkdownAst};
+
+    #[test]
+    fn test_ipc_payload_serialization() {
+        let ast = MarkdownAst {
+            nodes: vec![
+                AstNode::Text { content: "Hello".to_string() },
+                AstNode::InlineMath { expression: "x^2".to_string() }
+            ]
+        };
+        
+        let json_payload = serde_json::to_string(&ast).expect("failed to serialize AST");
+        assert!(json_payload.contains(r#"{"type":"Text","content":"Hello"}"#));
+        assert!(json_payload.contains(r#"{"type":"InlineMath","expression":"x^2"}"#));
+    }
+}
+
 fn main() {
     pyo3::prepare_freethreaded_python();
 
@@ -733,7 +789,10 @@ fn main() {
             get_file_node,
             apply_text_delta,
             apply_spreadsheet_delta,
-            undo_operation
+            undo_operation,
+            get_ast,
+            insert_text,
+            delete_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running LabFlow desktop shell");

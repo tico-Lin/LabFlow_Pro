@@ -99,12 +99,17 @@ fn test_undo_operation() {
     let state2 = merge(&ops, &[]);
     assert_eq!(state2.nodes[&node].get_text(), "B");
 
-    // Undo the undo
-    // Wait, can we undo an UndoOperation?
-    // Let's test undoing the insertion of "B" as well
-    ops.push(undo_operation(op_b.id, clock.tick().0, peer));
+    // Redo insertion of "A" by undoing the previous undo
+    let undo_op_a_id = ops.last().unwrap().id;
+    ops.push(undo_operation(undo_op_a_id, clock.tick().0, peer));
+    
     let state3 = merge(&ops, &[]);
-    assert_eq!(state3.nodes[&node].get_text(), "");
+    assert_eq!(state3.nodes[&node].get_text(), "AB");
+
+    // Undo the insertion of "B"
+    ops.push(undo_operation(op_b.id, clock.tick().0, peer));
+    let state4 = merge(&ops, &[]);
+    assert_eq!(state4.nodes[&node].get_text(), "A");
 }
 
 #[test]

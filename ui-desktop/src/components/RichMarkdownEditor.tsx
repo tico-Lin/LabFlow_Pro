@@ -1,10 +1,14 @@
-import ToastUIEditor, { type Editor as ToastEditorInstance, type EditorOptions } from "@toast-ui/editor";
-import "@toast-ui/editor/dist/toastui-editor.css";
-import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
-import { useEffect, useRef } from "react";
-
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useTranslation } from "../i18n";
+import { listen } from "@tauri-apps/api/event";
+
+type AstNode =
+  | { type: "Text"; content: string }
+  | { type: "InlineMath"; expression: string }
+  | { type: "BlockMath"; expression: string }
+  | { type: "Chemical"; format: string; payload: string };
+
+type MarkdownAst = { nodes: AstNode[] };
 
 type RichMarkdownEditorProps = {
   nodeId?: string;
@@ -14,102 +18,128 @@ type RichMarkdownEditorProps = {
   onChange: (value: string) => void;
 };
 
-const toolbarItems: NonNullable<EditorOptions["toolbarItems"]> = [
-  ["heading", "bold", "italic", "strike"],
-  ["hr", "quote"],
-  ["ul", "ol", "task", "indent", "outdent"],
-  ["table", "link", "image"],
-  ["code", "codeblock"]
-];
-
-export default function RichMarkdownEditor({ nodeId, value, placeholder, theme, onChange }: RichMarkdownEditorProps) {
-  const { t } = useTranslation();
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<ToastEditorInstance | null>(null);
-  const onChangeRef = useRef(onChange);
-  const nodeIdRef = useRef(nodeId);
+export default function RichMarkdownEditor({
+  nodeId,
+  value,
+  placeholder,
+  theme,
+  onChange,
+}: RichMarkdownEditorProps) {
+  const [ast, setAst] = useState<MarkdownAst | null>(null);
 
   useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
+    if (!nodeId) return;
 
-  useEffect(() => {
-    nodeIdRef.current = nodeId;
-  }, [nodeId]);
-
-  useEffect(() => {
-    if (!hostRef.current) {
-      return;
-    }
-
-    const editor = new ToastUIEditor({
-      el: hostRef.current,
-      initialValue: value,
-      initialEditType: "wysiwyg",
-      previewStyle: "vertical",
-      hideModeSwitch: true,
-      usageStatistics: false,
-      autofocus: false,
-      height: "640px",
-      minHeight: "640px",
-      placeholder,
-      toolbarItems,
-      theme: theme === "dark" ? "dark" : undefined,
-      events: {
-        change: () => {
-          const newMarkdown = editor.getMarkdown();
-          onChangeRef.current(newMarkdown);
-          
-          if (nodeIdRef.current) {
-            // Emitting full text as a delta for Phase 1 simulation
-            invoke("apply_text_delta", {
-              nodeId: nodeIdRef.current,
-              posId: Date.now().toString(),
-              text: newMarkdown
-            }).catch(console.error);
-          }
-        }
+    const fetchAst = async () => {
+      try {
+        const fetchedAst = await invoke<MarkdownAst>("get_ast", {
+          node_id: nodeId,
+        });
+        setAst(fetchedAst);
+      } catch (err) {
+        console.error("Failed to fetch AST", err);
       }
+    };
+
+    fetchAst();
+
+    const unlisten = listen("graph-updated", () => {
+      fetchAst();
     });
 
-    editorRef.current = editor;
-
-    // Load the WASM module for high-performance rendering (Markdown + LaTeX)
-    const initWasmEngine = async () => {
-      try {
-        // Mock loading of WASM parser
-        console.log(t("editor.info.loading_wasm") || "Loading WASM LaTeX/Markdown engine...");
-        // const wasm = await import('wasm-latex-markdown');
-        // await wasm.init();
-      } catch (err) {
-        console.error(t("editor.error.failed_wasm") || "Failed to load WASM engine", err);
-      }
-    };
-    void initWasmEngine();
-
     return () => {
-      editorRef.current = null;
-      editor.destroy();
-      if (hostRef.current) {
-        hostRef.current.innerHTML = "";
-      }
+      unlisten.then((fn) => fn());
     };
-  }, [placeholder, theme]);
+  }, [nodeId]);
 
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor) {
-      return;
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    onChange(newText);
+
+    if (nodeId) {
+      invoke("insert_text", {
+        nodeId,
+        posId: Date.now().toString(),
+        text: newText,
+      }).catch(console.error);
     }
+  };
 
-    const currentValue = editor.getMarkdown();
-    if (currentValue !== value) {
-      editor.setMarkdown(value, false);
-    }
-  }, [value]);
-
-  return <div className="rich-markdown-editor" ref={hostRef} />;
-}// Added SMILES rendering hook
-export function initSmilesDrawer() {
-  // Stub for hooking up smiles-drawer inside ToastUI
+  return (
+    <div
+      className={`rich-markdown-editor theme-${theme}`}
+      style={{ display: "flex", gap: "1rem", height: "640px" }}
+    >
+      <textarea
+        data-testid="editor-textarea"
+        style={{
+          flex: 1,
+          resize: "none",
+          padding: "1rem",
+          background: "transparent",
+          color: "inherit",
+        }}
+        value={value}
+        placeholder={placeholder}
+        onChange={handleInput}
+      />
+      <div
+        data-testid="ast-preview"
+        className="ast-preview"
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          border: "1px solid #333",
+          padding: "1rem",
+        }}
+      >
+        {ast ? (
+          ast.nodes.map((node, i) => {
+            switch (node.type) {
+              case "Text":
+                return (
+                  <span key={i} data-testid={`ast-node-text`}>
+                    {node.content}
+                  </span>
+                );
+              case "InlineMath":
+                return (
+                  <span
+                    key={i}
+                    className="math inline"
+                    data-testid={`ast-node-inlinemath`}
+                  >
+                    ${node.expression}$
+                  </span>
+                );
+              case "BlockMath":
+                return (
+                  <div
+                    key={i}
+                    className="math block"
+                    data-testid={`ast-node-blockmath`}
+                  >
+                    $${node.expression}$$
+                  </div>
+                );
+              case "Chemical":
+                return (
+                  <div
+                    key={i}
+                    className="chemical"
+                    data-testid={`ast-node-chemical`}
+                  >
+                    [{node.format}: {node.payload}]
+                  </div>
+                );
+              default:
+                return null;
+            }
+          })
+        ) : (
+          <div data-testid="loading-indicator">Loading AST...</div>
+        )}
+      </div>
+    </div>
+  );
 }

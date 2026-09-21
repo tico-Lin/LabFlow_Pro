@@ -283,7 +283,15 @@ pub struct NodeState {
 
 impl NodeState {
     pub fn get_text(&self) -> String {
-        self.text_sequence.values().cloned().collect::<Vec<_>>().join("")
+        let mut capacity = 0;
+        for s in self.text_sequence.values() {
+            capacity += s.len();
+        }
+        let mut text = String::with_capacity(capacity);
+        for s in self.text_sequence.values() {
+            text.push_str(s);
+        }
+        text
     }
 }
 
@@ -460,6 +468,37 @@ struct EdgeWip {
 /// // Convergent result: node exists with the payload from the higher (ts,peer) op.
 /// assert!(state.nodes.contains_key(&node_id));
 /// ```
+use std::sync::{Arc, RwLock};
+
+#[derive(Debug, Clone)]
+pub struct SharedGraphState {
+    inner: Arc<RwLock<GraphState>>,
+}
+
+impl Default for SharedGraphState {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(RwLock::new(GraphState::new())),
+        }
+    }
+}
+
+impl SharedGraphState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn read(&self) -> std::sync::RwLockReadGuard<'_, GraphState> {
+        self.inner.read().unwrap()
+    }
+
+    pub fn write(&self) -> std::sync::RwLockWriteGuard<'_, GraphState> {
+        self.inner.write().unwrap()
+    }
+}
+
+/// Merge two (possibly partial, possibly overlapping) operation sequences into
+/// a single, consistent [`GraphState`].
 pub fn merge(ops_a: &[Operation], ops_b: &[Operation]) -> GraphState {
     // ── 1. Deduplicate by op.id (union of both slices) ───────────────────────
     let mut seen: HashSet<OpId> =
@@ -473,25 +512,39 @@ pub fn merge(ops_a: &[Operation], ops_b: &[Operation]) -> GraphState {
         .collect();
 
     // ── 2. Deterministic total sort: (ts, peer, id) ──────────────────────────
-    //
-    // Every replica with the same logical log will produce the same sort order,
-    // which is the foundation of convergence.
     log.sort_unstable();
 
-    // ── 3. First pass: collect undone ops ────────────────────────────────────
-    let mut undone = HashSet::new();
+    // ── 3. First pass: resolve undone ops recursively ────────────────────────
+    let mut undone_by: HashMap<OpId, Vec<OpId>> = HashMap::new();
     for op in &log {
         if let OpKind::UndoOperation { target_id } = &op.kind {
-            undone.insert(*target_id);
+            undone_by.entry(*target_id).or_default().push(op.id);
         }
     }
-    let mut state     = GraphState::new();
+
+    // A helper to determine if an operation is effectively undone.
+    // It is undone if any of its undoers are NOT undone.
+    fn is_effectively_undone(op_id: OpId, undone_by: &HashMap<OpId, Vec<OpId>>) -> bool {
+        if let Some(undos) = undone_by.get(&op_id) {
+            undos.iter().any(|u_id| !is_effectively_undone(*u_id, undone_by))
+        } else {
+            false
+        }
+    }
+
+    let mut undone = HashSet::new();
+    for op in &log {
+        if is_effectively_undone(op.id, &undone_by) {
+            undone.insert(op.id);
+        }
+    }
+    
+    let mut state = GraphState::new();
     state.undone_ops = undone;
 
     let mut edge_wips: HashMap<EdgeId, EdgeWip> = HashMap::new();
 
     for op in &log {
-        // Skip operations that have been undone, and don't process UndoOperation itself in apply_op
         if state.undone_ops.contains(&op.id) {
             continue;
         }
