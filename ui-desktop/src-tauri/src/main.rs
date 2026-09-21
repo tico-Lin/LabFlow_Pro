@@ -468,10 +468,21 @@ fn apply_text_delta(
 fn apply_spreadsheet_delta(
     window: Window,
     state: State<'_, EngineBridgeState>,
-    node_id: String,
-    delta_data: Vec<u8>,
+    request: tauri::ipc::Request<'_>,
 ) -> Result<(), String> {
-    let node_id = Uuid::parse_str(&node_id).map_err(|err| format!("invalid node id: {err}"))?;
+    let node_id_str = request
+        .headers()
+        .get("x-node-id")
+        .ok_or("Missing X-Node-Id header")?
+        .to_str()
+        .map_err(|_| "Invalid X-Node-Id header format")?;
+    
+    let node_id = Uuid::parse_str(node_id_str).map_err(|err| format!("invalid node id: {err}"))?;
+    
+    let delta_data = match request.body() {
+        tauri::ipc::InvokeBody::Raw(data) => data.clone(),
+        _ => return Err("Request body must be raw binary data for performance".to_string()),
+    };
     
     let mut bridge = state
         .inner

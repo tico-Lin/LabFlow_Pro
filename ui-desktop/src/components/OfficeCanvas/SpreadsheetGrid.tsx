@@ -30,7 +30,9 @@ export interface SpreadsheetGridProps {
   onCellEdited?: (col: number, row: number, newValue: string) => void;
 }
 
-export function createDemoSpreadsheetData(t: (key: string) => string): SpreadsheetGridData {
+export function createDemoSpreadsheetData(
+  t: (key: string) => string,
+): SpreadsheetGridData {
   return {
     rows: 100,
     cols: 3,
@@ -43,14 +45,20 @@ export function createDemoSpreadsheetData(t: (key: string) => string): Spreadshe
       "2:3": 0,
       "3:1": 1,
       "3:2": 0,
-      "3:3": 0
-    }
+      "3:3": 0,
+    },
   };
 }
 
 import { useTranslation } from "../../i18n";
 
-export default function SpreadsheetGrid({ nodeId, data, rows = 1_000_000, cols = 50, onCellEdited }: SpreadsheetGridProps) {
+export default function SpreadsheetGrid({
+  nodeId,
+  data,
+  rows = 1_000_000,
+  cols = 50,
+  onCellEdited,
+}: SpreadsheetGridProps) {
   const { t } = useTranslation();
   const gridRows = data?.rows ?? rows;
   const gridCols = data?.cols ?? cols;
@@ -68,26 +76,32 @@ export default function SpreadsheetGrid({ nodeId, data, rows = 1_000_000, cols =
     return colsArray;
   }, [gridCols, t]);
 
-  // 2. Mock Data / Fetching Logic
-  // For Phase A, we prove virtualization by dynamically generating cell data on the fly.
+  // Use a ref for data to prevent `getData` identity changes and excessive re-renders
+  const dataRef = React.useRef(data);
+  React.useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
   const getData = useCallback(
     ([col, row]: Item): GridCell => {
+      const currentData = dataRef.current;
+      const cellVal = currentData?.cells[`${row + 1}:${col + 1}`];
       return {
         kind: GridCellKind.Text,
-        data: data?.cells[`${row + 1}:${col + 1}`] == null
-          ? `R${row + 1}C${col + 1}`
-          : String(data.cells[`${row + 1}:${col + 1}`]),
-        displayData: data?.cells[`${row + 1}:${col + 1}`] == null
-          ? `R${row + 1}C${col + 1}`
-          : String(data.cells[`${row + 1}:${col + 1}`]),
+        data: cellVal == null ? `R${row + 1}C${col + 1}` : String(cellVal),
+        displayData:
+          cellVal == null ? `R${row + 1}C${col + 1}` : String(cellVal),
         allowOverlay: true,
       };
     },
-    [data]
+    [], // Dependency free, highly stable callback
   );
 
   const handleCellEdited = useCallback(
-    (cell: Item, newValue: import("@glideapps/glide-data-grid").EditableGridCell) => {
+    (
+      cell: Item,
+      newValue: import("@glideapps/glide-data-grid").EditableGridCell,
+    ) => {
       const [col, row] = cell;
       if (newValue.kind === GridCellKind.Text) {
         if (onCellEdited) {
@@ -96,34 +110,64 @@ export default function SpreadsheetGrid({ nodeId, data, rows = 1_000_000, cols =
         if (nodeId) {
           // Send cell diff via Tauri
           const encoder = new TextEncoder();
-          const deltaData = encoder.encode(JSON.stringify({ col, row, value: newValue.data }));
-          invoke("apply_spreadsheet_delta", {
-            nodeId,
-            deltaData: Array.from(deltaData)
+          const deltaData = encoder.encode(
+            JSON.stringify({ col, row, value: newValue.data }),
+          );
+          invoke("apply_spreadsheet_delta", deltaData, {
+            headers: {
+              "x-node-id": nodeId,
+            },
           }).catch(console.error);
         }
       }
     },
-    [onCellEdited, nodeId]
+    [onCellEdited, nodeId],
   );
 
   // WebGL / WebGPU Rendering Context Hook
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     if (canvasRef.current) {
-      const gl = canvasRef.current.getContext("webgl2") || canvasRef.current.getContext("webgl");
+      const gl =
+        canvasRef.current.getContext("webgl2") ||
+        canvasRef.current.getContext("webgl");
       if (gl) {
-         // Setup WebGL spreadsheet rendering for 1M+ rows
-         console.log("Initialized WebGL renderer for SpreadsheetGrid");
+        // Setup WebGL spreadsheet rendering for 1M+ rows
+        console.log("Initialized WebGL renderer for SpreadsheetGrid");
       }
     }
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%", minHeight: "500px", border: "1px solid #ccc", position: "relative" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        minHeight: "500px",
+        border: "1px solid #ccc",
+        position: "relative",
+      }}
+    >
       {/* WebGL Canvas fallback underneath the interactive grid */}
-      <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          width: "100%",
+          height: "100%",
+        }}
+      >
         <DataEditor
           getCellContent={getData}
           onCellEdited={handleCellEdited}
