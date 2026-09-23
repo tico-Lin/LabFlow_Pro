@@ -104,7 +104,7 @@ export function useCrdtDoc(docId: string, initialValue: string = "") {
       } else if (newText.length < textValue.length) {
         deleteText(newText.length, textValue.length - newText.length);
       }
-      setTextValue(newText);
+      // Removed local caching: setTextValue(newText);
     },
     [textValue, insertText, deleteText],
   );

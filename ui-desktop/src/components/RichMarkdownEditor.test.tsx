@@ -71,13 +71,9 @@ describe("RichMarkdownEditor TDD Validation", () => {
 
     // Simulate typing a sequence of text
     fireEvent.change(textarea, { target: { value: "Hello Local" } });
-    expect(textarea.value).toBe("Hello Local");
 
-    // The component has debounced the event (which was tested in useCrdtDoc.test.ts)
-    // We now trigger a simulated backend conflict event.
-    // Imagine another user typed "Hello Remote" at the exact same time, and Rust resolved it
-    // to "Hello Local Remote" based on Lamport clocks.
-
+    // With the new architecture, local updates don't change state directly.
+    // They are sent to the Rust core, which broadcasts crdt-update events.
     await act(async () => {
       // We simulate the backend pushing the final mathematically-resolved state
       await waitFor(() => expect(crdtUpdateCallback).toBeDefined());

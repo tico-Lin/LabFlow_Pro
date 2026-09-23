@@ -193,6 +193,33 @@ fn resolve_blob_path(blob_hash: &str) -> Result<PathBuf, String> {
             return Ok(path);
         }
     }
-
     Err(format!("blob not found for hash: {blob_hash}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_execute_plugin_forcefully_killed() {
+        let manifest = PluginManifest {
+            id: "test-kill".to_string(),
+            name: "Test Kill".to_string(),
+            description: "Test".to_string(),
+            engine: "python".to_string(),
+            // A python script that sleeps for 100 seconds so it can be killed (or times out)
+            execute_cmd: vec!["python".to_string(), "-c".to_string(), "import time; time.sleep(100)".to_string()],
+            supported_formats: vec![],
+            parameters: serde_json::json!([]),
+            plugin_dir: PathBuf::from("."),
+        };
+
+        // Here we rely on the 5 second timeout to kill it (or simulate a kill).
+        // Since we want to test "forcefully killed", let's use a 5s timeout.
+        let result = execute_plugin(&manifest, "{}", None);
+        
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("SECURITY_WARNING") || err_msg.contains("failed to execute plugin") || err_msg.contains("process exited with failure"));
+    }
 }

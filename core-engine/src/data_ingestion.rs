@@ -296,6 +296,21 @@ pub fn parse_hdf5_mock(path: &std::path::Path) -> Result<Value, String> {
     }))
 }
 
+pub fn generate_mock_1m_dataset() -> Vec<u8> {
+    // Generate 1M mock data points, return as binary
+    // Using a binary format like Float64 (8 bytes per coordinate pair = 16 bytes per point)
+    // 1M points = 16 MB. This simulates fetching large datasets.
+    let count = 1_000_000;
+    let mut buffer = Vec::with_capacity(count * 16);
+    for i in 0..count {
+        let x: f64 = i as f64 * 0.1;
+        let y: f64 = (x).sin() + (i as f64 % 100.0) * 0.01;
+        buffer.extend_from_slice(&x.to_le_bytes());
+        buffer.extend_from_slice(&y.to_le_bytes());
+    }
+    buffer
+}
+
 pub fn ingest_large_file(source_path: &std::path::Path, peer_id: PeerId) -> Result<Vec<Operation>, String> {
     let mut clock = LamportClock::new();
     

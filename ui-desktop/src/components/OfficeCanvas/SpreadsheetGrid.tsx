@@ -78,12 +78,37 @@ export default function SpreadsheetGrid({
 
   // Use a ref for data to prevent `getData` identity changes and excessive re-renders
   const dataRef = React.useRef(data);
+  const rawBinaryDataRef = React.useRef<Float64Array | null>(null);
+
   React.useEffect(() => {
     dataRef.current = data;
   }, [data]);
 
+  React.useEffect(() => {
+    invoke<Uint8Array>("fetch_mock_1m_dataset")
+      .then((buffer) => {
+        // Uint8Array to Float64Array mapping
+        rawBinaryDataRef.current = new Float64Array(buffer.buffer);
+      })
+      .catch(console.error);
+  }, []);
+
   const getData = useCallback(
     ([col, row]: Item): GridCell => {
+      if (rawBinaryDataRef.current && col < 2) {
+        const offset = row * 2 + col;
+        let cellVal: number | string = "N/A";
+        if (offset < rawBinaryDataRef.current.length) {
+          cellVal = rawBinaryDataRef.current[offset];
+        }
+        return {
+          kind: GridCellKind.Text,
+          data: String(cellVal),
+          displayData: String(cellVal),
+          allowOverlay: true,
+        };
+      }
+
       const currentData = dataRef.current;
       const cellVal = currentData?.cells[`${row + 1}:${col + 1}`];
       return {

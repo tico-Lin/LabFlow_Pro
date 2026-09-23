@@ -1387,4 +1387,63 @@ mod tests {
         // Canonical log length = 6 (no duplicates).
         assert_eq!(state.log.len(), 6);
     }
+    #[test]
+    fn test_concurrent_text_insertions_deletions() {
+        let p1 = fixed_peer(1);
+        let p2 = fixed_peer(2);
+        let node_id = fixed_node(1);
+
+        let mut clk1 = LamportClock::new();
+        let mut clk2 = LamportClock::new();
+
+        let mut ops = vec![insert(node_id, "doc", 1, p1)];
+        clk1.observe(LamportTs(1));
+        clk2.observe(LamportTs(1));
+
+        let mut p1_ops = Vec::new();
+        for i in 0..100 {
+            p1_ops.push(Operation::new(
+                OpKind::InsertText {
+                    node_id,
+                    pos_id: format!("pos_p1_{}", i),
+                    text: "A".to_string(),
+                },
+                clk1.tick(),
+                p1,
+            ));
+        }
+
+        let mut p2_ops = Vec::new();
+        for i in 0..100 {
+            p2_ops.push(Operation::new(
+                OpKind::InsertText {
+                    node_id,
+                    pos_id: format!("pos_p2_{}", i),
+                    text: "B".to_string(),
+                },
+                clk2.tick(),
+                p2,
+            ));
+        }
+
+        ops.extend(p1_ops);
+        ops.extend(p2_ops);
+
+        for i in 0..50 {
+            ops.push(Operation::new(
+                OpKind::DeleteText {
+                    node_id,
+                    pos_id: format!("pos_p1_{}", i),
+                },
+                clk1.tick(),
+                p1,
+            ));
+        }
+
+        let state = merge(&ops, &[]);
+        let text = state.nodes[&node_id].get_text();
+        
+        assert_eq!(text.chars().filter(|c| *c == 'A').count(), 50);
+        assert_eq!(text.chars().filter(|c| *c == 'B').count(), 100);
+    }
 }

@@ -6,7 +6,7 @@ import {
   WidthProvider,
   type Layout,
   type LayoutItem,
-  type ResponsiveLayouts
+  type ResponsiveLayouts,
 } from "react-grid-layout/legacy";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
@@ -16,11 +16,13 @@ import {
   parsePluginManifests,
   type GraphStateSnapshot,
   type PluginManifest,
-  type ThemeName
+  type ThemeName,
 } from "../app/labflow";
 import PdfViewer from "../components/PdfViewer";
 import { ScientificChart } from "../components/OfficeCanvas/ScientificChart";
-import SpreadsheetGrid, { type SpreadsheetGridData } from "../components/OfficeCanvas/SpreadsheetGrid";
+import SpreadsheetGrid, {
+  type SpreadsheetGridData,
+} from "../components/OfficeCanvas/SpreadsheetGrid";
 import { useTranslation } from "../i18n";
 
 type AnalysisModuleFormState = Record<string, string>;
@@ -33,9 +35,9 @@ type AnalysisResultState = {
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const WORKBENCH_LAYOUT_STORAGE_KEY = "workbench-layout-v2";
 const DEFAULT_WORKBENCH_LAYOUT: Layout = [
-  { i: "metadata",    x: 0, y: 0,  w: 12, h: 3, minW: 4, minH: 2 },
-  { i: "spreadsheet", x: 0, y: 3,  w: 12, h: 6, minW: 5, minH: 4 },
-  { i: "chart",       x: 0, y: 9,  w: 12, h: 5, minW: 5, minH: 4 }
+  { i: "metadata", x: 0, y: 0, w: 12, h: 3, minW: 4, minH: 2 },
+  { i: "spreadsheet", x: 0, y: 3, w: 12, h: 6, minW: 5, minH: 4 },
+  { i: "chart", x: 0, y: 9, w: 12, h: 5, minW: 5, minH: 4 },
 ];
 const WORKBENCH_CARD_STYLE = {
   display: "flex",
@@ -43,7 +45,7 @@ const WORKBENCH_CARD_STYLE = {
   overflow: "hidden",
   backgroundColor: "var(--bg-surface)",
   border: "1px solid var(--border-color, var(--border))",
-  borderRadius: "8px"
+  borderRadius: "8px",
 } as const;
 
 const NUMBER_INPUT_PATTERN = /^-?\d*(?:[.,]\d*)?$/u;
@@ -94,7 +96,7 @@ function normalizeWorkbenchLayout(next: unknown): Layout {
       maxW,
       maxH,
       w: typeof maxW === "number" ? Math.min(normalizedW, maxW) : normalizedW,
-      h: typeof maxH === "number" ? Math.min(normalizedH, maxH) : normalizedH
+      h: typeof maxH === "number" ? Math.min(normalizedH, maxH) : normalizedH,
     };
   });
 }
@@ -114,8 +116,14 @@ function parseAnalysisChartData(value: unknown): ChartPoint[] | null {
   const pointCount = Math.min(xValues.length, yValues.length);
   const nextData: ChartPoint[] = [];
   for (let index = 0; index < pointCount; index += 1) {
-    const x = typeof xValues[index] === "number" ? xValues[index] : Number(xValues[index]);
-    const y = typeof yValues[index] === "number" ? yValues[index] : Number(yValues[index]);
+    const x =
+      typeof xValues[index] === "number"
+        ? xValues[index]
+        : Number(xValues[index]);
+    const y =
+      typeof yValues[index] === "number"
+        ? yValues[index]
+        : Number(yValues[index]);
     if (Number.isFinite(x) && Number.isFinite(y)) {
       nextData.push({ x, y });
     }
@@ -129,7 +137,10 @@ const DATA_EXTENSIONS = new Set(["csv", "txt", "dat", "tsv", "asc"]);
 
 type FileViewMode = "pdf" | "data" | "none";
 
-function parseDelimitedText(text: string): { xValues: number[]; yValues: number[] } {
+function parseDelimitedText(text: string): {
+  xValues: number[];
+  yValues: number[];
+} {
   const lines = text
     .split(/\r?\n/u)
     .map((line) => line.trim())
@@ -140,8 +151,14 @@ function parseDelimitedText(text: string): { xValues: number[]; yValues: number[
   }
 
   const sample = lines[0];
-  const delimiter = sample.includes("\t") ? "\t" : sample.includes(";") ? ";" : ",";
-  const rows = lines.map((line) => line.split(delimiter).map((cell) => cell.trim()));
+  const delimiter = sample.includes("\t")
+    ? "\t"
+    : sample.includes(";")
+      ? ";"
+      : ",";
+  const rows = lines.map((line) =>
+    line.split(delimiter).map((cell) => cell.trim()),
+  );
 
   // Skip a header row when the first cell is non-numeric
   const startRow = rows[0] && Number.isNaN(Number(rows[0][0])) ? 1 : 0;
@@ -166,7 +183,10 @@ function parseDelimitedText(text: string): { xValues: number[]; yValues: number[
   return { xValues, yValues };
 }
 
-function buildFileSpreadsheetData(xValues: number[], yValues: number[]): SpreadsheetGridData {
+function buildFileSpreadsheetData(
+  xValues: number[],
+  yValues: number[],
+): SpreadsheetGridData {
   const cells: SpreadsheetGridData["cells"] = {};
   cells["1:1"] = "X";
   cells["1:2"] = "Y";
@@ -207,7 +227,7 @@ export default function Workbench({
   metadataEntries,
   selectedNodeId,
   selectedNodeLabel,
-  onLoadNode
+  onLoadNode,
 }: WorkbenchProps) {
   const { id } = useParams();
   const location = useLocation();
@@ -218,16 +238,23 @@ export default function Workbench({
   const [modulesError, setModulesError] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string>("");
   const [moduleForm, setModuleForm] = useState<AnalysisModuleFormState>({});
-  const [analysisResultData, setAnalysisResultData] = useState<ChartPoint[] | null>(null);
-  const [analysisResultState, setAnalysisResultState] = useState<AnalysisResultState | null>(null);
+  const [analysisResultData, setAnalysisResultData] = useState<
+    ChartPoint[] | null
+  >(null);
+  const [analysisResultState, setAnalysisResultState] =
+    useState<AnalysisResultState | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
   const [fileViewMode, setFileViewMode] = useState<FileViewMode>("none");
   const [fileHash, setFileHash] = useState<string | null>(null);
   const [fileChartData, setFileChartData] = useState<ChartPoint[] | null>(null);
-  const [fileSpreadsheetData, setFileSpreadsheetData] = useState<SpreadsheetGridData | null>(null);
-  const [fileLoadStatus, setFileLoadStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [fileSpreadsheetData, setFileSpreadsheetData] =
+    useState<SpreadsheetGridData | null>(null);
+  const [fileLoadStatus, setFileLoadStatus] = useState<
+    "idle" | "loading" | "error"
+  >("idle");
   const [fileLoadError, setFileLoadError] = useState<string | null>(null);
+  const [isRuntimeDisconnected, setIsRuntimeDisconnected] = useState(false);
   const [workbenchLayout, setWorkbenchLayout] = useState<Layout>(() => {
     if (typeof window === "undefined") {
       return DEFAULT_WORKBENCH_LAYOUT;
@@ -248,7 +275,7 @@ export default function Workbench({
 
   const selectedModule = useMemo<PluginManifest | undefined>(
     () => analysisModules.find((module) => module.id === selectedModuleId),
-    [analysisModules, selectedModuleId]
+    [analysisModules, selectedModuleId],
   );
   const workbenchLayouts = useMemo<ResponsiveLayouts>(
     () => ({
@@ -256,9 +283,9 @@ export default function Workbench({
       md: workbenchLayout,
       sm: workbenchLayout,
       xs: workbenchLayout,
-      xxs: workbenchLayout
+      xxs: workbenchLayout,
     }),
-    [workbenchLayout]
+    [workbenchLayout],
   );
 
   const fileIdFromQuery = useMemo(() => {
@@ -322,10 +349,15 @@ export default function Workbench({
             return;
           }
 
-          const bytes = Array.isArray(raw) ? new Uint8Array(raw) : (raw as unknown as Uint8Array);
+          const bytes = Array.isArray(raw)
+            ? new Uint8Array(raw)
+            : (raw as unknown as Uint8Array);
           const text = new TextDecoder("utf-8").decode(bytes);
           const { xValues, yValues } = parseDelimitedText(text);
-          const nextChart: ChartPoint[] = xValues.map((x, i) => ({ x, y: yValues[i] }));
+          const nextChart: ChartPoint[] = xValues.map((x, i) => ({
+            x,
+            y: yValues[i],
+          }));
           setFileChartData(nextChart.length ? nextChart : null);
           setFileSpreadsheetData(buildFileSpreadsheetData(xValues, yValues));
           setFileLoadStatus("idle");
@@ -395,10 +427,16 @@ export default function Workbench({
     };
   }, []);
 
-  const updateModuleField = (parameter: PluginManifest["parameters"][number], value: string) => {
+  const updateModuleField = (
+    parameter: PluginManifest["parameters"][number],
+    value: string,
+  ) => {
     if (parameter.type === "number") {
       const normalizedValue = value.replace(/,/gu, ".");
-      if (normalizedValue !== "" && !NUMBER_INPUT_PATTERN.test(normalizedValue)) {
+      if (
+        normalizedValue !== "" &&
+        !NUMBER_INPUT_PATTERN.test(normalizedValue)
+      ) {
         return;
       }
 
@@ -415,11 +453,14 @@ export default function Workbench({
         ? {
             id: selectedModule.id,
             name: selectedModule.name,
-            supportedFormats: selectedModule.supportedFormats
+            supportedFormats: selectedModule.supportedFormats,
           }
         : null,
-      parameters: (selectedModule?.parameters ?? []).reduce<Record<string, string | number | boolean>>((accumulator, parameter) => {
-        const rawValue = moduleForm[parameter.key] ?? String(parameter.defaultValue);
+      parameters: (selectedModule?.parameters ?? []).reduce<
+        Record<string, string | number | boolean>
+      >((accumulator, parameter) => {
+        const rawValue =
+          moduleForm[parameter.key] ?? String(parameter.defaultValue);
 
         if (parameter.type === "number") {
           const parsedValue = Number(rawValue);
@@ -436,7 +477,7 @@ export default function Workbench({
 
         accumulator[parameter.key] = rawValue;
         return accumulator;
-      }, {})
+      }, {}),
     };
   };
 
@@ -452,19 +493,29 @@ export default function Workbench({
       const response = await invoke<string>("run_plugin_sandbox", {
         pluginId: selectedModule.id,
         params: JSON.stringify(buildModulePayload().parameters),
-        blobHash: null
+        blobHash: null,
       });
       const parsed = JSON.parse(response) as unknown;
       const nextAnalysisData = parseAnalysisChartData(parsed);
       setAnalysisResultData(nextAnalysisData);
       setAnalysisResultState({
         summary: JSON.stringify(parsed),
-        pointCount: nextAnalysisData?.length ?? null
+        pointCount: nextAnalysisData?.length ?? null,
       });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       setAnalysisResultData(null);
       setAnalysisResultState(null);
-      setAnalysisError(error instanceof Error ? error.message : String(error));
+      if (
+        errorMessage.includes("process exited with failure") ||
+        errorMessage.includes("SECURITY_WARNING") ||
+        errorMessage.includes("failed to execute plugin")
+      ) {
+        setIsRuntimeDisconnected(true);
+      } else {
+        setAnalysisError(errorMessage);
+      }
     } finally {
       setIsRunningAnalysis(false);
     }
@@ -490,7 +541,10 @@ export default function Workbench({
   const handleWorkbenchLayoutCommit = useCallback((layout: Layout) => {
     const normalizedLayout = normalizeWorkbenchLayout(layout);
     setWorkbenchLayout(normalizedLayout);
-    window.localStorage.setItem(WORKBENCH_LAYOUT_STORAGE_KEY, JSON.stringify(normalizedLayout));
+    window.localStorage.setItem(
+      WORKBENCH_LAYOUT_STORAGE_KEY,
+      JSON.stringify(normalizedLayout),
+    );
   }, []);
 
   return (
@@ -518,8 +572,15 @@ export default function Workbench({
           {fileViewMode === "pdf" && fileHash ? (
             <PdfViewer hash={fileHash} />
           ) : fileLoadStatus === "loading" ? (
-            <div className="workbench-file-status" role="status" aria-live="polite">
-              <LoaderCircle aria-hidden="true" className="modules-loading-spinner" />
+            <div
+              className="workbench-file-status"
+              role="status"
+              aria-live="polite"
+            >
+              <LoaderCircle
+                aria-hidden="true"
+                className="modules-loading-spinner"
+              />
               <p>{t("common.loading")}</p>
             </div>
           ) : fileLoadStatus === "error" ? (
@@ -527,93 +588,113 @@ export default function Workbench({
               <p>{fileLoadError}</p>
             </div>
           ) : (
-          <ResponsiveGridLayout
-            className="workbench-grid-layout"
-            layouts={workbenchLayouts}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-            rowHeight={72}
-            margin={[16, 16]}
-            containerPadding={[0, 0]}
-            useCSSTransforms={true}
-            compactType={null}
-            isResizable={true}
-            isDraggable={true}
-            resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
-            draggableHandle=".grid-drag-handle"
-            onLayoutChange={handleWorkbenchLayoutChange}
-            onDragStop={handleWorkbenchLayoutCommit}
-            onResizeStop={handleWorkbenchLayoutCommit}
-          >
-            <div key="metadata" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
-              <div className="grid-drag-handle" />
-              <div className="workbench-grid-item-body instrument-summary-card">
-                <div className="instrument-summary">
-                  <div>
-                    <strong>{t("app.instrument.currentFormat")}</strong>
-                    <span>{instrumentFormat}</span>
-                  </div>
-                  <div>
-                    <strong>{t("workbench.currentDataset")}</strong>
-                    <span>{selectedNodeLabel ?? t("workbench.noDataset")}</span>
-                  </div>
-                  <div className="metadata-list">
-                    {metadataEntries.length > 0 ? (
-                      metadataEntries.map(([key, value]) => (
-                        <span key={key} className="metadata-chip">
-                          {formatMetadataLabel(key, t)}: {formatMetadataValue(value, t("common.na"))}
+            <ResponsiveGridLayout
+              className="workbench-grid-layout"
+              layouts={workbenchLayouts}
+              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+              cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+              rowHeight={72}
+              margin={[16, 16]}
+              containerPadding={[0, 0]}
+              useCSSTransforms={true}
+              compactType={null}
+              isResizable={true}
+              isDraggable={true}
+              resizeHandles={["n", "s", "e", "w", "ne", "nw", "se", "sw"]}
+              draggableHandle=".grid-drag-handle"
+              onLayoutChange={handleWorkbenchLayoutChange}
+              onDragStop={handleWorkbenchLayoutCommit}
+              onResizeStop={handleWorkbenchLayoutCommit}
+            >
+              <div
+                key="metadata"
+                className="workbench-grid-item"
+                style={WORKBENCH_CARD_STYLE}
+              >
+                <div className="grid-drag-handle" />
+                <div className="workbench-grid-item-body instrument-summary-card">
+                  <div className="instrument-summary">
+                    <div>
+                      <strong>{t("app.instrument.currentFormat")}</strong>
+                      <span>{instrumentFormat}</span>
+                    </div>
+                    <div>
+                      <strong>{t("workbench.currentDataset")}</strong>
+                      <span>
+                        {selectedNodeLabel ?? t("workbench.noDataset")}
+                      </span>
+                    </div>
+                    <div className="metadata-list">
+                      {metadataEntries.length > 0 ? (
+                        metadataEntries.map(([key, value]) => (
+                          <span key={key} className="metadata-chip">
+                            {formatMetadataLabel(key, t)}:{" "}
+                            {formatMetadataValue(value, t("common.na"))}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="metadata-chip">
+                          {t("app.instrument.noMetadata")}
                         </span>
-                      ))
-                    ) : (
-                      <span className="metadata-chip">{t("app.instrument.noMetadata")}</span>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div key="spreadsheet" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
-              <div className="grid-drag-handle" />
-              <div className="workbench-grid-item-body">
-                <SpreadsheetGrid
-                  nodeId={targetNodeId || undefined}
-                  data={fileSpreadsheetData ?? spreadsheetData}
-                  themeName={theme}
-                  revision={revision}
-                  peakRow={fileSpreadsheetData ? null : peakRow}
-                  focusRow={fileSpreadsheetData ? null : focusedRow}
-                  focusCol={1}
-                  resizable={false}
-                  fillContainer={true}
-                />
-              </div>
-            </div>
-
-            <div key="chart" className="workbench-grid-item" style={WORKBENCH_CARD_STYLE}>
-              <div className="grid-drag-handle" />
-              <div className="chart-shell workbench-grid-item-body">
-                <div className="panel-heading compact-panel-heading">
-                  <div>
-                    <p className="eyebrow">{t("app.chart.eyebrow")}</p>
-                    <h3>{t("app.chart.title")}</h3>
-                    <p>{t("app.chart.description")}</p>
-                  </div>
+              <div
+                key="spreadsheet"
+                className="workbench-grid-item"
+                style={WORKBENCH_CARD_STYLE}
+              >
+                <div className="grid-drag-handle" />
+                <div className="workbench-grid-item-body">
+                  <SpreadsheetGrid
+                    nodeId={targetNodeId || undefined}
+                    data={fileSpreadsheetData ?? spreadsheetData}
+                    themeName={theme}
+                    revision={revision}
+                    peakRow={fileSpreadsheetData ? null : peakRow}
+                    focusRow={fileSpreadsheetData ? null : focusedRow}
+                    focusCol={1}
+                    resizable={false}
+                    fillContainer={true}
+                  />
                 </div>
-                <ScientificChart
-                  data={fileChartData ?? chartData}
-                  analysisResultData={analysisResultData}
-                  instrumentFormat={instrumentFormat}
-                  peakIndex={fileChartData ? undefined : peakIndex}
-                  themeName={theme}
-                  fillContainer={true}
-                />
               </div>
-            </div>
-          </ResponsiveGridLayout>
+
+              <div
+                key="chart"
+                className="workbench-grid-item"
+                style={WORKBENCH_CARD_STYLE}
+              >
+                <div className="grid-drag-handle" />
+                <div className="chart-shell workbench-grid-item-body">
+                  <div className="panel-heading compact-panel-heading">
+                    <div>
+                      <p className="eyebrow">{t("app.chart.eyebrow")}</p>
+                      <h3>{t("app.chart.title")}</h3>
+                      <p>{t("app.chart.description")}</p>
+                    </div>
+                  </div>
+                  <ScientificChart
+                    data={fileChartData ?? chartData}
+                    analysisResultData={analysisResultData}
+                    instrumentFormat={instrumentFormat}
+                    peakIndex={fileChartData ? undefined : peakIndex}
+                    themeName={theme}
+                    fillContainer={true}
+                  />
+                </div>
+              </div>
+            </ResponsiveGridLayout>
           )}
         </div>
 
-        <aside className="analysis-inspector app-surface" aria-labelledby="analysis-panel-title">
+        <aside
+          className="analysis-inspector app-surface"
+          aria-labelledby="analysis-panel-title"
+        >
           <div className="analysis-inspector-header">
             <p className="eyebrow">{t("workbench.modal.eyebrow")}</p>
             <h3 id="analysis-panel-title">{t("workbench.modal.title")}</h3>
@@ -622,10 +703,20 @@ export default function Workbench({
 
           <div className="analysis-inspector-body">
             {isLoadingModules ? (
-              <div className="analysis-panel-loading" role="status" aria-live="polite">
-                <LoaderCircle aria-hidden="true" className="modules-loading-spinner" />
+              <div
+                className="analysis-panel-loading"
+                role="status"
+                aria-live="polite"
+              >
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="modules-loading-spinner"
+                />
                 <p>{t("common.loading")}</p>
-                <div className="analysis-panel-loading-skeleton" aria-hidden="true">
+                <div
+                  className="analysis-panel-loading-skeleton"
+                  aria-hidden="true"
+                >
                   <span className="analysis-panel-loading-line is-wide" />
                   <span className="analysis-panel-loading-line" />
                   <span className="analysis-panel-loading-line" />
@@ -639,7 +730,10 @@ export default function Workbench({
               <>
                 <label className="analysis-panel-field">
                   <span>{t("workbench.modal.moduleLabel")}</span>
-                  <select value={selectedModuleId} onChange={(event) => handleModuleSelect(event.target.value)}>
+                  <select
+                    value={selectedModuleId}
+                    onChange={(event) => handleModuleSelect(event.target.value)}
+                  >
                     {analysisModules.map((module) => (
                       <option key={module.id} value={module.id}>
                         {module.name}
@@ -657,17 +751,30 @@ export default function Workbench({
                   {selectedModule?.parameters.length ? (
                     <div className="analysis-panel-field-grid">
                       {selectedModule.parameters.map((parameter) => (
-                        <label key={parameter.key} className="analysis-panel-field">
+                        <label
+                          key={parameter.key}
+                          className="analysis-panel-field"
+                        >
                           <div className="analysis-panel-field-label-row">
                             <span>{parameter.name}</span>
-                            <span className="analysis-panel-field-hint">{parameter.type}</span>
+                            <span className="analysis-panel-field-hint">
+                              {parameter.type}
+                            </span>
                           </div>
 
                           <div className="analysis-panel-field-input-row">
                             {parameter.type === "boolean" ? (
                               <select
-                                value={moduleForm[parameter.key] ?? String(parameter.defaultValue)}
-                                onChange={(event) => updateModuleField(parameter, event.target.value)}
+                                value={
+                                  moduleForm[parameter.key] ??
+                                  String(parameter.defaultValue)
+                                }
+                                onChange={(event) =>
+                                  updateModuleField(
+                                    parameter,
+                                    event.target.value,
+                                  )
+                                }
                               >
                                 <option value="true">true</option>
                                 <option value="false">false</option>
@@ -675,23 +782,40 @@ export default function Workbench({
                             ) : (
                               <input
                                 type="text"
-                                inputMode={parameter.type === "number" ? "decimal" : undefined}
+                                inputMode={
+                                  parameter.type === "number"
+                                    ? "decimal"
+                                    : undefined
+                                }
                                 placeholder={String(parameter.defaultValue)}
-                                value={moduleForm[parameter.key] ?? String(parameter.defaultValue)}
-                                onChange={(event) => updateModuleField(parameter, event.target.value)}
+                                value={
+                                  moduleForm[parameter.key] ??
+                                  String(parameter.defaultValue)
+                                }
+                                onChange={(event) =>
+                                  updateModuleField(
+                                    parameter,
+                                    event.target.value,
+                                  )
+                                }
                               />
                             )}
 
                             <span className="analysis-panel-field-default">
-                              {t("workbench.modal.defaultValue")}: {String(parameter.defaultValue)}
+                              {t("workbench.modal.defaultValue")}:{" "}
+                              {String(parameter.defaultValue)}
                             </span>
                           </div>
 
                           <div className="analysis-panel-field-meta">
                             {parameter.type === "number" ? (
-                              <span className="analysis-panel-field-hint">{t("workbench.modal.numberOnlyHint")}</span>
+                              <span className="analysis-panel-field-hint">
+                                {t("workbench.modal.numberOnlyHint")}
+                              </span>
                             ) : (
-                              <span className="analysis-panel-field-hint">{t("workbench.modal.parameterHint")}</span>
+                              <span className="analysis-panel-field-hint">
+                                {t("workbench.modal.parameterHint")}
+                              </span>
                             )}
                           </div>
                         </label>
@@ -716,7 +840,21 @@ export default function Workbench({
               <div className="analysis-panel-status">
                 <p>{selectedModule?.name}</p>
                 <strong>{analysisResultState.pointCount ?? "-"}</strong>
-                <span>{analysisResultState.pointCount ? t("app.chart.title") : analysisResultState.summary}</span>
+                <span>
+                  {analysisResultState.pointCount
+                    ? t("app.chart.title")
+                    : analysisResultState.summary}
+                </span>
+              </div>
+            ) : null}
+
+            {isRuntimeDisconnected ? (
+              <div className="analysis-panel-status is-error" role="alert">
+                <h3>Runtime Disconnected</h3>
+                <p>
+                  The Python agent runtime crashed or was forcefully killed
+                  during data exchange. Please restart the runtime to continue.
+                </p>
               </div>
             ) : null}
           </div>
@@ -725,10 +863,14 @@ export default function Workbench({
             <button
               type="button"
               className="primary-button"
-              disabled={isRunningAnalysis || isLoadingModules || !selectedModule}
+              disabled={
+                isRunningAnalysis || isLoadingModules || !selectedModule
+              }
               onClick={() => void handleRunAnalysisModule()}
             >
-              {isRunningAnalysis ? `${t("workbench.modal.run")}...` : t("workbench.modal.run")}
+              {isRunningAnalysis
+                ? `${t("workbench.modal.run")}...`
+                : t("workbench.modal.run")}
             </button>
           </div>
         </aside>

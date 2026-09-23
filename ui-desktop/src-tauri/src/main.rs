@@ -145,6 +145,11 @@ fn analyze_cv_data(voltages: Vec<f64>, currents: Vec<f64>) -> Result<serde_json:
 }
 
 #[tauri::command]
+fn fetch_mock_1m_dataset() -> Result<Vec<u8>, String> {
+    Ok(core_engine::data_ingestion::generate_mock_1m_dataset())
+}
+
+#[tauri::command]
 fn run_analysis_module(
     module_id: String,
     params: String,
@@ -810,7 +815,8 @@ fn main() {
             undo_operation,
             get_ast,
             insert_text,
-            delete_text
+            delete_text,
+            fetch_mock_1m_dataset
         ])
         .run(tauri::generate_context!())
         .expect("error while running LabFlow desktop shell");
