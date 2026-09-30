@@ -1,15 +1,24 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from fastapi.testclient import TestClient
 from app.models import Base
 from app.services import note_service
 from app.schemas import NoteBlockCreate
+from app.main import app
+from app.database import get_db
 from app.models import BlockType
 from pydantic import ValidationError
 
+from sqlalchemy.pool import StaticPool
+
 @pytest.fixture
 def db_session():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:", 
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = TestingSessionLocal()
@@ -64,3 +73,75 @@ def test_add_block_and_revert(db_session):
     block = note_service.add_block(db_session, note.id, block_in)
     assert block.id is not None
     assert block.content == "table"
+
+
+def test_reorder_blocks(db_session):
+    note = note_service.create_note(db_session)
+    blocks = [
+        NoteBlockCreate(block_type=BlockType.markdown, content="block A", order_index=0),
+        NoteBlockCreate(block_type=BlockType.markdown, content="block B", order_index=1),
+        NoteBlockCreate(block_type=BlockType.markdown, content="block C", order_index=2)
+    ]
+    note = note_service.update_blocks(db_session, note.id, blocks)
+    assert len(note.blocks) == 3
+    
+    block_ids = [b.id for b in sorted(note.blocks, key=lambda x: x.order_index)]
+    
+    # Reorder blocks: C -> 0, B -> 1, A -> 2
+    order_map = [
+        (block_ids[2], 0),
+        (block_ids[1], 1),
+        (block_ids[0], 2)
+    ]
+    note_service.reorder_blocks(db_session, note.id, order_map)
+    
+    fetched = note_service.get_note(db_session, note.id)
+    sorted_blocks = sorted(fetched.blocks, key=lambda x: x.order_index)
+    assert sorted_blocks[0].content == "block C"
+    assert sorted_blocks[1].content == "block B"
+    assert sorted_blocks[2].content == "block A"
+    
+    # Test index continuity constraint conceptually
+    indices = [b.order_index for b in sorted_blocks]
+    assert indices == [0, 1, 2]
+
+
+def test_api_notes(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    client = TestClient(app)
+
+    # Create note
+    res = client.post("/api/v1/notes/")
+    assert res.status_code == 200
+    note_id = res.json()["id"]
+
+    # Get note
+    res = client.get(f"/api/v1/notes/{note_id}")
+    assert res.status_code == 200
+    assert res.json()["id"] == note_id
+
+    # Update blocks
+    blocks_payload = [
+        {"block_type": "markdown", "content": "hello", "order_index": 0}
+    ]
+    res = client.put(f"/api/v1/notes/{note_id}/blocks", json=blocks_payload)
+    assert res.status_code == 200
+    assert len(res.json()["blocks"]) == 1
+
+    # Delete note
+    res = client.delete(f"/api/v1/notes/{note_id}")
+    assert res.status_code == 200
+
+    # Get deleted note (should be 404)
+    res = client.get(f"/api/v1/notes/{note_id}")
+    assert res.status_code == 404
+    
+    # Delete non-existent note
+    res = client.delete(f"/api/v1/notes/{note_id}")
+    assert res.status_code == 404
+    
+    # Update non-existent note blocks
+    res = client.put(f"/api/v1/notes/{note_id}/blocks", json=[])
+    assert res.status_code == 404
+    
+    app.dependency_overrides.clear()

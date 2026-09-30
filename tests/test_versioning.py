@@ -7,9 +7,15 @@ from app.services.versioning_service import revert_to_version
 from app.schemas import NoteBlockCreate
 from app.models import BlockType
 
+from sqlalchemy.pool import StaticPool
+
 @pytest.fixture
 def db_session():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:", 
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = TestingSessionLocal()

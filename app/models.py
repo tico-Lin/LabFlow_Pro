@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import Column, Integer, String, Enum as SQLEnum, ForeignKey, JSON, DateTime
+from sqlalchemy import Column, Integer, String, Enum as SQLEnum, ForeignKey, JSON, DateTime, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -15,6 +15,7 @@ class BlockType(str, Enum):
 class ExperimentNote(Base):
     __tablename__ = "experiment_notes"
     id = Column(Integer, primary_key=True, index=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     blocks = relationship("NoteBlock", back_populates="note",
                           cascade="all, delete-orphan")
     revisions = relationship(

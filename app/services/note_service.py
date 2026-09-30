@@ -15,13 +15,16 @@ def create_note(db: Session) -> ExperimentNote:
 
 
 def get_note(db: Session, note_id: int) -> ExperimentNote:
-    return db.query(ExperimentNote).filter(ExperimentNote.id == note_id).first()
+    return db.query(ExperimentNote).filter(
+        ExperimentNote.id == note_id,
+        ExperimentNote.is_deleted.is_(False)
+    ).first()
 
 
 def delete_note(db: Session, note_id: int):
     note = get_note(db, note_id)
     if note:
-        db.delete(note)
+        note.is_deleted = True
         db.commit()
         return True
     return False
@@ -78,4 +81,24 @@ def update_blocks(
     note = get_note(db, note_id)
     if create_rev:
         create_revision(db, note.id, old_blocks, note.blocks, user)
+    return note
+
+
+def reorder_blocks(
+    db: Session, note_id: int, block_orders: List[tuple[int, int]], user: str = "system"
+):
+    note = get_note(db, note_id)
+    if not note:
+        return None
+    old_blocks = [b for b in note.blocks]
+
+    order_map = dict(block_orders)
+    for block in note.blocks:
+        if block.id in order_map:
+            block.order_index = order_map[block.id]
+
+    db.commit()
+
+    note = get_note(db, note_id)
+    create_revision(db, note.id, old_blocks, note.blocks, user)
     return note
