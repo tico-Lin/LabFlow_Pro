@@ -4,6 +4,7 @@ from app.schemas import NoteBlockCreate
 from typing import List
 from .versioning_service import create_revision
 
+
 def create_note(db: Session) -> ExperimentNote:
     note = ExperimentNote()
     db.add(note)
@@ -12,8 +13,10 @@ def create_note(db: Session) -> ExperimentNote:
     create_revision(db, note.id, [], [], "system")
     return note
 
+
 def get_note(db: Session, note_id: int) -> ExperimentNote:
     return db.query(ExperimentNote).filter(ExperimentNote.id == note_id).first()
+
 
 def delete_note(db: Session, note_id: int):
     note = get_note(db, note_id)
@@ -23,10 +26,13 @@ def delete_note(db: Session, note_id: int):
         return True
     return False
 
-def add_block(db: Session, note_id: int, block_in: NoteBlockCreate, user: str = "system") -> NoteBlock:
+
+def add_block(
+    db: Session, note_id: int, block_in: NoteBlockCreate, user: str = "system"
+) -> NoteBlock:
     note = get_note(db, note_id)
     old_blocks = [b for b in note.blocks] if note else []
-    
+
     block = NoteBlock(
         note_id=note_id,
         block_type=block_in.block_type,
@@ -37,21 +43,25 @@ def add_block(db: Session, note_id: int, block_in: NoteBlockCreate, user: str = 
     db.add(block)
     db.commit()
     db.refresh(block)
-    
+
     note = get_note(db, note_id)
     create_revision(db, note.id, old_blocks, note.blocks, user)
     return block
 
-def update_blocks(db: Session, note_id: int, blocks_in: List[NoteBlockCreate], user: str = "system", create_rev: bool = True):
+
+def update_blocks(
+    db: Session, note_id: int, blocks_in: List[NoteBlockCreate],
+    user: str = "system", create_rev: bool = True
+):
     note = get_note(db, note_id)
     if not note:
         return None
     old_blocks = [b for b in note.blocks]
-    
+
     for b in note.blocks:
         db.delete(b)
     db.flush()
-    
+
     new_blocks = []
     for i, b_in in enumerate(blocks_in):
         b = NoteBlock(
@@ -64,9 +74,8 @@ def update_blocks(db: Session, note_id: int, blocks_in: List[NoteBlockCreate], u
         db.add(b)
         new_blocks.append(b)
     db.commit()
-    
+
     note = get_note(db, note_id)
     if create_rev:
         create_revision(db, note.id, old_blocks, note.blocks, user)
     return note
-

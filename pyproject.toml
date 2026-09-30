@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "labflow-pro"
 version = "0.3.0"
-description = "LabFlow Pro — 現代化科學數據視覺化與分析平台"
+description = "LabFlow Pro - 現代化科學數據視覺化與分析平台"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "GPL-3.0"}
@@ -51,3 +51,6 @@ strict = true
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.pylint.format]
+max-line-length = 100

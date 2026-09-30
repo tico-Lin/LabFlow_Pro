@@ -27,6 +27,7 @@ class NoteBlockResponse(NoteBlockBase):
     note_id: int
 
     from pydantic import model_validator
+
     @model_validator(mode='before')
     @classmethod
     def extract_metadata(cls, data: Any) -> Any:
