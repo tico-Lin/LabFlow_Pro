@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "labflow-pro"
-version = "0.1.0"
+version = "0.3.0"
 description = "LabFlow Pro — 現代化科學數據視覺化與分析平台"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "GPL-3.0"}
 authors = [{name = "LabFlow Team"}]
 
 dependencies = [
@@ -20,6 +20,8 @@ dependencies = [
     "chardet>=5.0",
     "tomli>=2.0; python_version < '3.11'",
     "tomli-w>=1.0",
+    "fastapi>=0.115",
+    "sqlalchemy>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +37,7 @@ dev = [
 labflow = "labflow.app:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/labflow"]
+packages = ["src/labflow", "app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
