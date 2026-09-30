@@ -2,9 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.main import app
-from app.database import get_db
-from app.models import Base
+from labflow.server.main import app
+from labflow.server.database import get_db
+from labflow.server.models import Base
 
 engine = create_engine(
     "sqlite:///file:testdb?mode=memory&cache=shared&uri=true",

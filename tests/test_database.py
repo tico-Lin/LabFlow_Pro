@@ -1,4 +1,4 @@
-from app.database import get_db
+from labflow.server.database import get_db
 
 def test_get_db():
     db_gen = get_db()

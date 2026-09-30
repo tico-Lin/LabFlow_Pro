@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator, ConfigDict
 from typing import List, Optional, Any, Dict
-from app.models import BlockType
+from labflow.server.models import BlockType
 from datetime import datetime
 
 

@@ -1,11 +1,11 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import Base, NoteRevision
-from app.services import note_service
-from app.services.versioning_service import revert_to_version
-from app.schemas import NoteBlockCreate
-from app.models import BlockType
+from labflow.server.models import Base, NoteRevision
+from labflow.server.services import note_service
+from labflow.server.services.versioning_service import revert_to_version
+from labflow.server.schemas import NoteBlockCreate
+from labflow.server.models import BlockType
 
 from sqlalchemy.pool import StaticPool
 

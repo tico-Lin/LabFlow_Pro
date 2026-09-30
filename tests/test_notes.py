@@ -2,12 +2,12 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
-from app.models import Base
-from app.services import note_service
-from app.schemas import NoteBlockCreate
-from app.main import app
-from app.database import get_db
-from app.models import BlockType
+from labflow.server.models import Base
+from labflow.server.services import note_service
+from labflow.server.schemas import NoteBlockCreate
+from labflow.server.main import app
+from labflow.server.database import get_db
+from labflow.server.models import BlockType
 from pydantic import ValidationError
 
 from sqlalchemy.pool import StaticPool
