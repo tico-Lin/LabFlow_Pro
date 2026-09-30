@@ -1,24 +1,18 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import Base
+from app.main import app
 from app.database import get_db
-from fastapi import FastAPI
-from app.api import notes
-
-# Setup a test app
-app = FastAPI()
-app.include_router(notes.router, prefix="/api/v1/notes")
-
-from sqlalchemy.pool import StaticPool
+from app.models import Base
 
 engine = create_engine(
-    "sqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    "sqlite:///file:testdb?mode=memory&cache=shared&uri=true",
+    connect_args={"check_same_thread": False}
 )
-Base.metadata.create_all(bind=engine)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base.metadata.create_all(bind=engine)
 
 def override_get_db():
     try:
@@ -38,43 +32,45 @@ def test_create_note():
     assert response.json()["blocks"] == []
 
 def test_get_note():
-    post_res = client.post("/api/v1/notes/")
-    note_id = post_res.json()["id"]
+    # Create first
+    resp1 = client.post("/api/v1/notes/")
+    note_id = resp1.json()["id"]
     
-    get_res = client.get(f"/api/v1/notes/{note_id}")
-    assert get_res.status_code == 200
-    assert get_res.json()["id"] == note_id
-    
-    get_res_fail = client.get(f"/api/v1/notes/999")
-    assert get_res_fail.status_code == 404
+    resp2 = client.get(f"/api/v1/notes/{note_id}")
+    assert resp2.status_code == 200
+    assert resp2.json()["id"] == note_id
+
+def test_get_note_not_found():
+    resp = client.get("/api/v1/notes/9999")
+    assert resp.status_code == 404
 
 def test_update_blocks():
-    post_res = client.post("/api/v1/notes/")
-    note_id = post_res.json()["id"]
+    resp1 = client.post("/api/v1/notes/")
+    note_id = resp1.json()["id"]
     
     blocks = [
-        {
-            "block_type": "markdown",
-            "content": "hello API",
-            "order_index": 0
-        }
+        {"block_type": "markdown", "content": "hello", "order_index": 0}
     ]
-    
-    put_res = client.put(f"/api/v1/notes/{note_id}/blocks", json=blocks)
-    assert put_res.status_code == 200
-    res_data = put_res.json()
-    assert len(res_data["blocks"]) == 1
-    assert res_data["blocks"][0]["content"] == "hello API"
-    
-    put_res_fail = client.put(f"/api/v1/notes/999/blocks", json=blocks)
-    assert put_res_fail.status_code == 404
+    resp2 = client.put(f"/api/v1/notes/{note_id}/blocks", json=blocks)
+    assert resp2.status_code == 200
+    assert len(resp2.json()["blocks"]) == 1
+    assert resp2.json()["blocks"][0]["content"] == "hello"
+
+def test_update_blocks_not_found():
+    resp = client.put("/api/v1/notes/9999/blocks", json=[])
+    assert resp.status_code == 404
 
 def test_delete_note():
-    post_res = client.post("/api/v1/notes/")
-    note_id = post_res.json()["id"]
+    resp1 = client.post("/api/v1/notes/")
+    note_id = resp1.json()["id"]
     
-    del_res = client.delete(f"/api/v1/notes/{note_id}")
-    assert del_res.status_code == 200
+    resp2 = client.delete(f"/api/v1/notes/{note_id}")
+    assert resp2.status_code == 200
     
-    del_res_fail = client.delete(f"/api/v1/notes/999")
-    assert del_res_fail.status_code == 404
+    resp3 = client.get(f"/api/v1/notes/{note_id}")
+    assert resp3.status_code == 404
+
+def test_delete_note_not_found():
+    resp = client.delete("/api/v1/notes/9999")
+    assert resp.status_code == 404
+

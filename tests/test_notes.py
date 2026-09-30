@@ -56,3 +56,11 @@ def test_note_block_crud(db_session):
 
     note_service.delete_note(db_session, note.id)
     assert note_service.get_note(db_session, note.id) is None
+
+
+def test_add_block_and_revert(db_session):
+    note = note_service.create_note(db_session)
+    block_in = NoteBlockCreate(block_type=BlockType.table, content="table", order_index=0)
+    block = note_service.add_block(db_session, note.id, block_in)
+    assert block.id is not None
+    assert block.content == "table"

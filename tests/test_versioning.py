@@ -49,3 +49,4 @@ def test_versioning_continuity_and_revert(db_session):
     new_revisions = db_session.query(NoteRevision).filter(NoteRevision.note_id == note.id).order_by(NoteRevision.version_number.asc()).all()
     assert len(new_revisions) == 12
     assert new_revisions[-1].version_number == 12
+

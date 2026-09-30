@@ -8,3 +8,4 @@ def test_get_db():
         next(db_gen)
     except StopIteration:
         pass
+

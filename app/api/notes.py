@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+
+from app.database import get_db
 from app.schemas import ExperimentNoteResponse, NoteBlockCreate
 from app.services import note_service
-from app.database import get_db
 
 router = APIRouter()
 
@@ -22,10 +22,7 @@ def get_note(note_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{note_id}/blocks", response_model=ExperimentNoteResponse)
-def update_blocks(
-        note_id: int,
-        blocks: List[NoteBlockCreate],
-        db: Session = Depends(get_db)):
+def update_blocks(note_id: int, blocks: list[NoteBlockCreate], db: Session = Depends(get_db)):
     note = note_service.update_blocks(db, note_id, blocks)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")

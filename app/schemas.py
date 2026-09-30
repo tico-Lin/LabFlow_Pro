@@ -30,10 +30,10 @@ class NoteBlockResponse(NoteBlockBase):
     @model_validator(mode='before')
     @classmethod
     def extract_metadata(cls, data: Any) -> Any:
-        if hasattr(data, 'block_metadata'):
+        if hasattr(data, 'metadata_'):
             # Convert SQLAlchemy obj to dict
             d = {c.name: getattr(data, c.name) for c in data.__table__.columns}
-            d['metadata'] = data.block_metadata
+            d['metadata'] = data.metadata_
             return d
         return data
 

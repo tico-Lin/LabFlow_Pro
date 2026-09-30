@@ -7,3 +7,4 @@ def test_init_db_no_password_leak(caplog):
     
     assert "supersecretpassword" not in caplog.text
     assert "[hidden]" in caplog.text
+
